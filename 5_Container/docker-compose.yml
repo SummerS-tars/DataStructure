@@ -1,0 +1,34 @@
+# services 定义了你希望运行的容器组
+services:
+  # 'dev' 是我们为这个服务（容器）起的名字，你可以自定义
+  c-cpp-dev:
+    # build: '.' 告诉 Compose 使用当前目录下的 Dockerfile 来构建镜像
+    build: ./build/
+    # image: cpp-dev-env 指定构建出的镜像的名称
+    image: c-cpp-developer
+
+    # hostname: 对应 docker run 命令中的 --hostname
+    hostname: cpp-dev-box
+
+    # working_dir: 对应 docker run 命令中的 -w
+    working_dir: /usr/src/myapp
+
+    # volumes: 对应 docker run 命令中的 -v
+    volumes:
+      # 将当前目录 (.) 挂载到容器的 /usr/src/myapp 目录
+      - ./work:/usr/src/myapp
+      # (修改) 将命名卷挂载到容器的用户主目录
+      # 这会保存你的 .p10k.zsh, .zshrc, .zsh_history 等所有配置
+      - cpp-dev-home:/root
+
+    # stdin_open: 对应 docker run 命令中的 -i (interactive)
+    # 保持标准输入开启，以便我们可以向容器输入命令
+    stdin_open: true
+
+    # tty: 对应 docker run 命令中的 -t (tty)
+    # 分配一个伪终端，让我们的 shell 看起来更美观，功能更完整
+    tty: true
+
+volumes:
+  cpp-dev-home:
+    driver: local
