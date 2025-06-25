@@ -15,8 +15,10 @@ services:
 
     # volumes: 对应 docker run 命令中的 -v
     volumes:
+      # 挂载用于连接github的ssh密钥
+      - .ssh:/root/.ssh
       # 将当前目录 (.) 挂载到容器的 /usr/src/myapp 目录
-      - ./work:/usr/src/myapp
+      - work:/usr/src/myapp
       # (修改) 将命名卷挂载到容器的用户主目录
       # 这会保存你的 .p10k.zsh, .zshrc, .zsh_history 等所有配置
       - cpp-dev-home:/root
@@ -29,6 +31,10 @@ services:
     # 分配一个伪终端，让我们的 shell 看起来更美观，功能更完整
     tty: true
 
+    network_mode: host
+
 volumes:
   cpp-dev-home:
+    driver: local
+  work:
     driver: local
