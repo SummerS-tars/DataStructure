@@ -1,4 +1,4 @@
-# Introduction to Data Structures
+# Chapter 1 : Introduction to Data Structures
 
 Class Structure:
 
@@ -187,4 +187,3 @@ we can take $\Omega$ denotation as the reverse of Big O Notation
 
 and if the result of the Big O Notation and $\Omega$ Notation are the same,  
 then we can use $\Theta$ Notation to denote the complexity  
-
