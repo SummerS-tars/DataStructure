@@ -29,9 +29,9 @@ Class Structure:
 
 **Data**: the carrier of info, can be processed by computer  
 
-**Data element**: the smallest unit of data, can be composed of multiple data items
+**Data element**: the basic unit of data, can be composed of multiple data items
 
-**Data item**: the relatively independent data unit in a data element
+**Data item**: the relatively independent and smallest data unit in a data element
 
 <font color="yellow">**Data structure** is composed of some set of data elements and the relationship between them</font>
 
