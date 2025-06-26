@@ -132,10 +132,16 @@ and "storage image of some logical structure" as "storage structure"
 ### 3.1. Previous Estimation
 
 **Space Complexity**: the amount of memory space required by the algorithm  
+    include the static and dynamic parts  
 
 **Time Complexity**: the amount of time required by the algorithm  
+    can be divided into compile time and execution time  
+    the latter can be measured by *program steps*  
 
 ### 3.2. Asymptotic Analysis
+
+when the scale $n$ is large enough,  
+we call the order of magnitude of the complexity as the **asymptotic complexity** of the algorithm  
 
 **Big O Notation**: the upper bound of the algorithm complexity
 
@@ -150,6 +156,12 @@ How to use?
 easy to say:  
 extract the part which takes the most significant when the scale $n$ is large enough  
 
+detail description:  
+
+if $\exist c > 0$ and $n_0 > 0$, $c, n_0 \in \mathbb{N_+}$,  
+which confirm that $\forall n \geq n_0$, $T(n) \leq c \cdot f(n)$,  
+then we can say that $T(n) = O(f(n))$  
+
 *for example, $O(n^2 + n) = O(n^2)$*  
 
 some rules:
@@ -157,6 +169,13 @@ some rules:
 1. addition  
     take the max one  
     *when the procedures happens serially*  
+
+    sequence:  
+
+    $$
+    c < log_2n<n<nlog_2n<n^2<n^3<2^n<3^n<n!
+    $$
+
 2. multiplication  
     multiple the part inside the $O()$  
     *when the procedures happens nested*  
@@ -172,13 +191,15 @@ thoughts:
 loop:  
 
 1. single
-2. serial
-3. nested
+2. serial  
+    use addition rule
+3. nested  
+    use multiplication rule
 
 as a result:  
 
 we can break the procedure into several sub procedures  
-and use the Big O Notation relatively to analyze the complexity  
+and use the Big O Notation to respectively analyze the complexity  
 then use the rules to merge the results  
 
 #### 3.2.2. Ω and Θ Notation
