@@ -9,10 +9,15 @@ Main Content:
 ---
 
 - [1. Linear List(线性表)](#1-linear-list线性表)
-    - [Operations of Linear List](#operations-of-linear-list)
-    - [Array](#array)
-        - [Special Matrices Storage](#special-matrices-storage)
-    - [Sequential List](#sequential-list)
+    - [1.1. Operations of Linear List](#11-operations-of-linear-list)
+    - [1.2. Array](#12-array)
+        - [1.2.1. Special Matrices Storage](#121-special-matrices-storage)
+    - [1.3. Sequential List](#13-sequential-list)
+- [2. Linked List](#2-linked-list)
+    - [2.1. Singly Linked List(单链表)](#21-singly-linked-list单链表)
+    - [2.2. Loop Linked List](#22-loop-linked-list)
+    - [2.3. Double Linked List](#23-double-linked-list)
+    - [2.4. Static Linked List](#24-static-linked-list)
 
 ---
 
@@ -32,7 +37,7 @@ in which, the $k_0$ is **head** and the $k_{n-1}$ is **tail**
 
 **direct next element(直接后继)**  
 
-### Operations of Linear List
+### 1.1. Operations of Linear List
 
 - access
 
@@ -44,7 +49,7 @@ in which, the $k_0$ is **head** and the $k_{n-1}$ is **tail**
 
 - delete
 
-### Array
+### 1.2. Array
 
 the list whose elements are in the same data type  
 and the elements can be directly stored and accessed by index
@@ -56,13 +61,13 @@ and the elements can be directly stored and accessed by index
 advantages:  
 can randomly access or modify the value of the element  
 
-#### Special Matrices Storage
+#### 1.2.1. Special Matrices Storage
 
 here, the special matrices means those matrices whose non-zero or zero elements are distributed in some special patterns  
 
 compressed storage is mainly used to store the special matrices which is in high degree  
 
-### Sequential List
+### 1.3. Sequential List
 
 definition:  
 put the elements in a linear list one by one in a continuous storage space  
@@ -74,3 +79,42 @@ so they can be accessed randomly
 
 compared with the Linear List, the sequential list has one more constraint:  
 the elements must share the same data type  
+
+## 2. Linked List
+
+Sequential List *(we usually call Array in C)* is good as any of its elements can be accessed randomly in $O(1)$ time  
+
+but when we need to insert or delete an element from it, we need $O(n)$ time  
+
+and static allocation for sequential list is hard to determine the size,  
+which may cause waste of space or overflow  
+
+for dynamic allocation,  
+we can extend the space but the time consumption is still $O(n)$  
+
+so the linked list can resolve these problems  
+whose elements can be stored in any place  
+every one keep the next element's address info(denoted as pointer)  
+
+linked list is proper for the situation  
+where frequent insertion or deletion and flexible storage need are required  
+
+### 2.1. Singly Linked List(单链表)
+
+every element is called a **node**  
+which is composed of two parts:  
+
+1. data domain  
+2. pointer(link) domain  
+
+one important property of linked list is that:  
+the physical sequence of the elements can differ from the logical sequence  
+which enables the convenient extension of the list  
+
+
+
+### 2.2. Loop Linked List
+
+### 2.3. Double Linked List
+
+### 2.4. Static Linked List
