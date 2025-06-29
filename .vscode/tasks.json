@@ -8,13 +8,19 @@
             "args": [
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/${fileBasenameNoExtension}.out"
             ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "clean current executable files under current directory",
+            "type": "shell",
+            "command": "find ${fileDirname} -maxdepth 1 -type f \\( -name '*.exe' -o -name '*.out' \\) -delete",
+            "problemMatcher": []
         }
     ]
 }
