@@ -15,6 +15,7 @@ Main Content:
     - [1.3. Sequential List](#13-sequential-list)
 - [2. Linked List](#2-linked-list)
     - [2.1. Singly Linked List(单链表)](#21-singly-linked-list单链表)
+        - [Iterator of Linked List](#iterator-of-linked-list)
     - [2.2. Loop Linked List](#22-loop-linked-list)
     - [2.3. Double Linked List](#23-double-linked-list)
     - [2.4. Static Linked List](#24-static-linked-list)
@@ -111,7 +112,17 @@ one important property of linked list is that:
 the physical sequence of the elements can differ from the logical sequence  
 which enables the convenient extension of the list  
 
+#### Iterator of Linked List
 
+Iterator, usually translated as **迭代器**, we can also call it **游标类**  
+which is designed to traverse(遍历) the elements of the list  
+
+definition principles:  
+
+- should be friend class of the List and NodeList
+- keep the reference of the existing List object  
+- should record the current position of the traversal  
+- should offer some checking and retrieving operations  
 
 ### 2.2. Loop Linked List
 
