@@ -8,7 +8,7 @@ void quick_sort(int q[], int l, int r) {
     while(i < j) {  // 双指针算法，i和j分别从两端向中间移动，通过交换实现分界点，直到相遇
         do i++; while(q[i] < x);
         do j--; while(q[j] > x);
-        if(i < j) std::swap(q[i], q[j]);
+        if(i < j) std::swap(q[i], q[j]); // 标准库函数中的swap传入的是引用，因此不是传地址
     }
 
     quick_sort(q, l, j);
