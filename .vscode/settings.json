@@ -1,5 +1,13 @@
 {
     "cSpell.words": [
-        "cout"
+        "cout",
+        "endl",
+        "fgets",
+        "fopen",
+        "getchar",
+        "getline",
+        "ifstream",
+        "scanf",
+        "strcspn"
     ]
 }
