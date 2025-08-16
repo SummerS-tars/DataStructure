@@ -1,12 +1,15 @@
 {
     "cSpell.words": [
         "cout",
+        "deque",
+        "deuqe",
         "endl",
         "fgets",
         "fopen",
         "getchar",
         "getline",
         "ifstream",
+        "multiset",
         "scanf",
         "strcspn"
     ]
