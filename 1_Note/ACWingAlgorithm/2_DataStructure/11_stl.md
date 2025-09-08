@@ -198,7 +198,7 @@ priority_queue<int, vector<int>, greater<int>> q;
 4. begin
 5. end
 
-### set, multiset
+### 8.1. set, multiset
 
 set是集合，multiset是多重集合  
 set中每个元素都是唯一的，multiset中可以有重复元素  
@@ -219,7 +219,7 @@ set/multiset操作：
     2. upper_bound(x) 返回大于某一个数的最小的数  
     3. 返回值为迭代器  
 
-### map, multimap
+### 8.2. map, multimap
 
 1. insert  
     注意插入的是一个pair  
@@ -230,7 +230,7 @@ set/multiset操作：
 
 基本所有的操作时间复杂度都是$O(logn)$  
 
-#### 操作方法
+#### 8.2.1. 操作方法
 
 我们完全可以用类似于C中数组的方式来操作map  
 

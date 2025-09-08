@@ -4,7 +4,7 @@ Queue
 一种线性结构  
 FIFO（First In First Out）  
 
-## 数组模拟
+## 1. 数组模拟
 
 在队尾插入元素，在队头弹出元素  
 
