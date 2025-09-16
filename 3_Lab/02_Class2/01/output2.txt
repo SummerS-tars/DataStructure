@@ -1,0 +1,4 @@
+20 is at position 1.
+Finding Error: 40 is not in.
+30
+1

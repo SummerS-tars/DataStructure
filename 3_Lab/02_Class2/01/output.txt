@@ -1,0 +1,8 @@
+FULL Insertion Error: 6 is not in.
+Finding Error: 6 is not in.
+5 is at position 4.
+1 is at position 0.
+POSITION -1 EMPTY Deletion Error.
+POSITION 6 EMPTY Deletion Error.
+1 5
+2
