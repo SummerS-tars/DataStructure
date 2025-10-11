@@ -11,7 +11,7 @@
                 "${fileDirname}/${fileBasenameNoExtension}.out",
                 "-g",
                 "-O0",
-                "-std=c++17",
+                "-std=c++23",
                 "-Wall"
             ],
             "problemMatcher": [],
@@ -29,7 +29,7 @@
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.out",
                 "-O2",
-                "-std=c++17",
+                "-std=c++23",
                 "-Wall"
             ],
             "problemMatcher": [],
