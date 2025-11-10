@@ -2,21 +2,21 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <filesystem>  // C++17 filesystem library
 
 SaveManager::SaveManager() : save_directory_("saves") {}
 
 std::string SaveManager::get_save_filename(int slot) const {
-    return save_directory_ + "/game" + std::to_string(slot) + ".save";
+    // 使用 filesystem::path 自动处理路径分隔符（Windows用\，Linux用/）
+    std::filesystem::path save_path = save_directory_;
+    save_path /= ("game" + std::to_string(slot) + ".save");
+    return save_path.string();
 }
 
 void SaveManager::ensure_directory() const {
-    #ifdef _WIN32
-        _mkdir(save_directory_.c_str());
-    #else
-        mkdir(save_directory_.c_str(), 0755);
-    #endif
+    // C++17 filesystem: 跨平台，自动处理目录创建
+    // 如果目录已存在，不会报错；如果父目录不存在，会递归创建
+    std::filesystem::create_directories(save_directory_);
 }
 
 bool SaveManager::is_valid_slot(int slot) const {
