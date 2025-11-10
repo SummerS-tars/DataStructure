@@ -253,7 +253,9 @@ void Game::run() {
 }
 
 void Game::replay_moves() {
-    const auto& commands = player_.get_commands();
+    // IMPORTANT: Make a COPY of commands, not a reference!
+    // We need to copy before resetting the player
+    std::vector<char> commands = player_.get_commands();
     
     if (commands.empty()) {
         std::cout << "\nNo moves to replay yet!\n";
