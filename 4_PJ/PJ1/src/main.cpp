@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "MenuManager.h"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
@@ -12,7 +13,7 @@ int main(int argc, char* argv[]) {
         game.run();
     } else {
         // Show main menu
-        Game::show_main_menu();
+        MenuManager::show_main_menu();
     }
     
     return 0;

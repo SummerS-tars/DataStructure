@@ -6,7 +6,11 @@
 #include "MazeGenerator.h"
 #include <string>
 
+class MenuManager;  // Forward declaration
+
 class Game {
+    friend class MenuManager;  // Allow MenuManager to access private members
+    
 private:
     Maze maze_;
     Player player_;
@@ -34,15 +38,6 @@ private:
     
     // Handle load command with slot number
     void handle_load_command(int slot);
-    
-    // Generate a new maze
-    void generate_maze_menu();
-    
-    // Helper functions for menu
-    static std::vector<std::string> scan_maze_files();
-    static std::vector<int> scan_save_slots();
-    static std::string select_maze_file();
-    static int select_save_slot();
 
 public:
     Game();
@@ -52,7 +47,4 @@ public:
     
     // Main game loop
     void run();
-    
-    // Show main menu and handle user choice
-    static void show_main_menu();
 };
