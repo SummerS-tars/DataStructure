@@ -49,14 +49,15 @@ bool SaveManager::save_game(int slot, const Player& player, const std::string& m
     
     std::string filename = get_save_filename(slot);
     if (state.save(filename)) {
-        std::cout << "\n╔════════════════════════════════════╗\n";
-        std::cout << "║   ✓ Game Saved to Slot " << slot << "          ║\n";
-        std::cout << "╠════════════════════════════════════╣\n";
-        std::cout << "║ Maze:  " << std::left << std::setw(26) << state.get_maze_name() << "║\n";
-        std::cout << "║ Position: (" << std::setw(2) << state.player_x << ", " << std::setw(2) << state.player_y << ")             ║\n";
-        std::cout << "║ Steps: " << std::setw(26) << state.step_count << "║\n";
-        std::cout << "║ Time:  " << std::setw(26) << state.get_timestamp_str().substr(11) << "║\n";
-        std::cout << "╚════════════════════════════════════╝\n";
+        std::cout << "\n========================================\n";
+        std::cout << "  ✓ Game Saved Successfully!\n";
+        std::cout << "========================================\n";
+        std::cout << "  Slot:     " << slot << "\n";
+        std::cout << "  Maze:     " << state.get_maze_name() << "\n";
+        std::cout << "  Position: (" << state.player_x << ", " << state.player_y << ")\n";
+        std::cout << "  Steps:    " << state.step_count << "\n";
+        std::cout << "  Time:     " << state.get_timestamp_str() << "\n";
+        std::cout << "========================================\n";
         return true;
     }
     
@@ -88,38 +89,37 @@ bool SaveManager::get_save_info(int slot, GameState& state) const {
 }
 
 void SaveManager::list_saves() const {
-    std::cout << "\n╔════════════════════════════════════════════════════════════╗\n";
-    std::cout << "║               Available Save Files                         ║\n";
-    std::cout << "╠══════╦═════════════╦══════════╦═══════╦══════════════════╣\n";
-    std::cout << "║ Slot ║ Maze        ║ Position ║ Steps ║ Saved At         ║\n";
-    std::cout << "╠══════╬═════════════╬══════════╬═══════╬══════════════════╣\n";
+    std::cout << "\n========================================\n";
+    std::cout << "      Available Save Files\n";
+    std::cout << "========================================\n";
     
     bool has_saves = false;
+    bool header_printed = false;
+    
     for (int slot = 1; slot <= MAX_SLOTS; slot++) {
         if (save_exists(slot)) {
             GameState state;
             if (get_save_info(slot, state)) {
-                has_saves = true;
-                std::string maze_name = state.get_maze_name();
-                if (maze_name.length() > 11) {
-                    maze_name = maze_name.substr(0, 8) + "...";
+                if (!header_printed) {
+                    std::cout << "  Slot | Maze         | Position | Steps | Saved At\n";
+                    std::cout << "  -----|--------------|----------|-------|------------------\n";
+                    header_printed = true;
                 }
+                has_saves = true;
                 
-                std::string time_str = state.get_timestamp_str().substr(5, 11); // MM-DD HH:MM
-                
-                std::cout << "║  " << slot << "   ║ " 
-                          << std::left << std::setw(11) << maze_name << " ║ "
-                          << "(" << std::setw(2) << std::right << state.player_x << "," 
-                          << std::setw(2) << state.player_y << ")  ║ "
-                          << std::setw(5) << state.step_count << " ║ "
-                          << time_str << "     ║\n";
+                std::cout << "  " << std::setw(4) << std::left << slot << " | ";
+                std::cout << std::setw(12) << std::left << state.get_maze_name().substr(0, 12) << " | ";
+                std::cout << "(" << std::setw(2) << std::right << state.player_x << "," 
+                          << std::setw(2) << std::right << state.player_y << ")  | ";
+                std::cout << std::setw(5) << std::right << state.step_count << " | ";
+                std::cout << state.get_timestamp_str() << "\n";
             }
         }
     }
     
     if (!has_saves) {
-        std::cout << "║                    No saves found                          ║\n";
+        std::cout << "  No saves found.\n";
     }
     
-    std::cout << "╚══════╩═════════════╩══════════╩═══════╩══════════════════╝\n";
+    std::cout << "========================================\n";
 }

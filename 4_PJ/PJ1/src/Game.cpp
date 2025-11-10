@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "GameState.h"
 #include <iostream>
+#include <iomanip>
 #include <cctype>
 #include <cstdlib>
 #include <limits>
@@ -382,10 +383,36 @@ void Game::handle_load_command(int slot) {
         return;
     }
     
-    // Load state using SaveManager
+    // Load state to preview
     GameState state;
     if (!save_manager_.load_game(slot, state)) {
         std::cout << "✗ Failed to load game!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    // Show confirmation dialog
+    std::cout << "\n========================================\n";
+    std::cout << "       Load Save File?\n";
+    std::cout << "========================================\n";
+    std::cout << "  Slot:     " << slot << "\n";
+    std::cout << "  Maze:     " << state.get_maze_name() << "\n";
+    std::cout << "  Position: (" << state.player_x << ", " << state.player_y << ")\n";
+    std::cout << "  Steps:    " << state.step_count << "\n";
+    std::cout << "  Saved:    " << state.get_timestamp_str() << "\n";
+    std::cout << "----------------------------------------\n";
+    std::cout << "  Warning: Current progress will be\n";
+    std::cout << "           lost if not saved!\n";
+    std::cout << "========================================\n";
+    std::cout << "  Load this save? (Y/N): ";
+    
+    char choice;
+    std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    
+    if (toupper(choice) != 'Y') {
+        std::cout << "Load cancelled.\n";
         std::cout << "Press Enter to continue...";
         std::cin.get();
         return;
