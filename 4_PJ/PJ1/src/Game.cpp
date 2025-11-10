@@ -576,39 +576,45 @@ void Game::run_multiplayer() {
             continue;
         }
         
-        // Process movement commands
-        bool moved = false;
-        for (char cmd : input) {
-            if (cmd == 'W' || cmd == 'w' || cmd == 'A' || cmd == 'a' ||
-                cmd == 'S' || cmd == 's' || cmd == 'D' || cmd == 'd') {
-                if (process_command_multiplayer(cmd, current_player_ref)) {
-                    moved = true;
-                    // Check if current player won
-                    if (check_win_multiplayer(current_player_ref)) {
-                        print_interface_multiplayer();
-                        std::cout << "\n========================================\n";
-                        std::cout << "  🎉 " << current_player_ref.get_name() << " WINS! 🎉\n";
-                        std::cout << "========================================\n";
-                        std::cout << "\nFinal Results:\n";
-                        std::cout << "  Winner: " << current_player_ref.get_name() << " - " << (current_player_ref.move_count() - 1) << " steps\n";
-                        Player& other_player = (current_player_ == 1) ? player2_ : player_;
-                        std::cout << "  " << other_player.get_name() << " - " << (other_player.move_count() - 1) << " steps\n";
-                        std::cout << "========================================\n";
-                        std::cout << "\nPress Enter to return to menu...";
-                        std::cin.get();
-                        is_running_ = false;
-                        return;
-                    }
-                } else {
-                    // Hit wall, skip rest of commands for this turn
-                    break;
-                }
-            }
+        // Process movement command - ONLY ONE MOVE PER TURN in multiplayer
+        if (input.length() > 1) {
+            std::cout << "\n⚠ Multiplayer mode: Only ONE move per turn!\n";
+            std::cout << "Use single command: W, A, S, or D\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+            continue;
         }
         
-        // Switch to next player if move was successful
-        if (moved) {
-            current_player_ = (current_player_ == 1) ? 2 : 1;
+        char cmd = input[0];
+        if (cmd == 'W' || cmd == 'w' || cmd == 'A' || cmd == 'a' ||
+            cmd == 'S' || cmd == 's' || cmd == 'D' || cmd == 'd') {
+            
+            if (process_command_multiplayer(cmd, current_player_ref)) {
+                // Check if current player won
+                if (check_win_multiplayer(current_player_ref)) {
+                    print_interface_multiplayer();
+                    std::cout << "\n========================================\n";
+                    std::cout << "  🎉 " << current_player_ref.get_name() << " WINS! 🎉\n";
+                    std::cout << "========================================\n";
+                    std::cout << "\nFinal Results:\n";
+                    std::cout << "  Winner: " << current_player_ref.get_name() << " - " << (current_player_ref.move_count() - 1) << " steps\n";
+                    Player& other_player = (current_player_ == 1) ? player2_ : player_;
+                    std::cout << "  " << other_player.get_name() << " - " << (other_player.move_count() - 1) << " steps\n";
+                    std::cout << "========================================\n";
+                    std::cout << "\nPress Enter to return to menu...";
+                    std::cin.get();
+                    is_running_ = false;
+                    return;
+                }
+                
+                // Move successful, switch to next player
+                current_player_ = (current_player_ == 1) ? 2 : 1;
+            }
+            // If hit wall, turn is skipped automatically by process_command_multiplayer
+        } else {
+            std::cout << "Invalid command. Use W/A/S/D to move.\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
         }
     }
     
