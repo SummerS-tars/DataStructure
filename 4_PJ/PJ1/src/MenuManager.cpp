@@ -215,12 +215,12 @@ void MenuManager::show_help() {
     std::cout << "\n========================================\n";
     std::cout << "            Help\n";
     std::cout << "========================================\n";
-    std::cout << "【Movement Commands】\n";
+    std::cout << "[Movement Commands]\n";
     std::cout << "  W - Move up\n";
     std::cout << "  A - Move left\n";
     std::cout << "  S - Move down\n";
     std::cout << "  D - Move right\n\n";
-    std::cout << "【Function Commands】\n";
+    std::cout << "[Function Commands]\n";
     std::cout << "  P - Print complete path\n";
     std::cout << "  U - Undo last move\n";
     std::cout << "  R - Replay all moves\n";
@@ -229,7 +229,7 @@ void MenuManager::show_help() {
     std::cout << "  SAVES - List all saves\n";
     std::cout << "  HELP - Show this help\n";
     std::cout << "  QUIT - Exit game\n\n";
-    std::cout << "【Game Rules】\n";
+    std::cout << "[Game Rules]\n";
     std::cout << "  * Move from Start (S) to End (E)\n";
     std::cout << "  * '#' = Wall (cannot pass)\n";
     std::cout << "  * ' ' = Passage (can pass)\n";
