@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "GameState.h"
 #include <iostream>
 #include <cctype>
 #include <cstdlib>
@@ -6,13 +7,16 @@
 #include <string>
 #include <sstream>
 
-Game::Game() : player_(0, 0), is_running_(false) {}
+Game::Game() : player_(0, 0), is_running_(false), current_maze_file_("") {}
 
 bool Game::init(const std::string& maze_file) {
     // Load maze
     if (!maze_.load(maze_file)) {
         return false;
     }
+    
+    // Store current maze file
+    current_maze_file_ = maze_file;
     
     // Initialize player at start position
     int start_x, start_y;
@@ -46,9 +50,9 @@ void Game::print_interface() const {
     
     std::cout << "\nCommands:\n";
     std::cout << "  W/A/S/D - Move (Up/Left/Down/Right)\n";
-    std::cout << "  P - Print path\n";
-    std::cout << "  U - Undo\n";
-    std::cout << "  Q - Quit\n";
+    std::cout << "  P - Print path  |  U - Undo  |  R - Replay\n";
+    std::cout << "  SAVE - Save game  |  LOAD - Load game\n";
+    std::cout << "  HELP - Show help  |  QUIT - Exit\n";
     std::cout << "===================================\n";
 }
 
@@ -97,6 +101,11 @@ bool Game::process_command(char cmd) {
             std::cout << "Press Enter to continue...";
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cin.get();
+            return true;
+        }
+        case 'R': {
+            // Replay
+            replay_moves();
             return true;
         }
         case 'Q': {
@@ -151,6 +160,49 @@ void Game::run() {
         std::string input;
         std::getline(std::cin, input);
         
+        // Convert to uppercase for comparison
+        std::string upper_input = input;
+        for (char& c : upper_input) {
+            c = toupper(c);
+        }
+        
+        // Check for special multi-character commands
+        if (upper_input == "SAVE") {
+            if (save_game("saves/game.save")) {
+                std::cout << "✓ Game saved to saves/game.save\n";
+            } else {
+                std::cout << "✗ Failed to save game!\n";
+            }
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+            continue;
+        } else if (upper_input == "LOAD") {
+            if (load_game("saves/game.save")) {
+                std::cout << "✓ Game loaded from saves/game.save\n";
+            } else {
+                std::cout << "✗ Failed to load game!\n";
+            }
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+            continue;
+        } else if (upper_input == "QUIT" || upper_input == "EXIT") {
+            is_running_ = false;
+            break;
+        } else if (upper_input == "HELP") {
+            std::cout << "\n=== Help ===\n";
+            std::cout << "W/A/S/D - Move up/left/down/right\n";
+            std::cout << "P - Print path\n";
+            std::cout << "U - Undo last move\n";
+            std::cout << "R - Replay all moves\n";
+            std::cout << "SAVE - Save game\n";
+            std::cout << "LOAD - Load saved game\n";
+            std::cout << "QUIT - Exit game\n";
+            std::cout << "============\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+            continue;
+        }
+        
         // Process each character in the input
         for (size_t i = 0; i < input.length(); i++) {
             char cmd = input[i];
@@ -198,4 +250,126 @@ void Game::run() {
     }
     
     std::cout << "Thanks for playing!\n";
+}
+
+void Game::replay_moves() {
+    const auto& commands = player_.get_commands();
+    
+    if (commands.empty()) {
+        std::cout << "\nNo moves to replay yet!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin.get();
+        return;
+    }
+    
+    std::cout << "\n=== Starting Replay ===\n";
+    std::cout << "Total commands: " << commands.size() << "\n";
+    std::cout << "Press Enter to start replay...";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cin.get();
+    
+    // Save current player state
+    Player temp_player = player_;
+    
+    // Reset player to start
+    int start_x, start_y;
+    maze_.get_start_pos(start_x, start_y);
+    player_ = Player(start_x, start_y);
+    
+    // Replay each command with animation
+    for (size_t i = 0; i < commands.size(); i++) {
+        char cmd = commands[i];
+        
+        // Display current state
+        clear_screen();
+        std::cout << "=== Replay Mode ===\n";
+        std::cout << "Command " << (i + 1) << "/" << commands.size() << ": " << cmd << "\n";
+        std::cout << "===================\n\n";
+        
+        maze_.display(player_.x(), player_.y());
+        
+        // Execute move
+        int new_x = player_.x();
+        int new_y = player_.y();
+        
+        switch (toupper(cmd)) {
+            case 'W': new_y--; break;
+            case 'S': new_y++; break;
+            case 'A': new_x--; break;
+            case 'D': new_x++; break;
+        }
+        
+        if (!maze_.is_wall(new_x, new_y)) {
+            player_.move_to(new_x, new_y, cmd);
+        }
+        
+        // Delay for animation effect
+        #ifdef _WIN32
+            system("timeout /t 1 /nobreak > nul");
+        #else
+            system("sleep 0.5");
+        #endif
+    }
+    
+    // Show final state
+    clear_screen();
+    std::cout << "=== Replay Complete! ===\n\n";
+    maze_.display(player_.x(), player_.y());
+    std::cout << "\nTotal moves: " << commands.size() << "\n";
+    
+    // Restore original player state
+    player_ = temp_player;
+    
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+bool Game::save_game(const std::string& filename) {
+    GameState state;
+    
+    // Save player position
+    state.player_x = player_.x();
+    state.player_y = player_.y();
+    
+    // Save maze file
+    state.maze_file = current_maze_file_;
+    
+    // Save move history
+    state.move_history = player_.get_path();
+    
+    // Save command history
+    state.command_history = player_.get_commands();
+    
+    return state.save(filename);
+}
+
+bool Game::load_game(const std::string& filename) {
+    GameState state;
+    
+    if (!state.load(filename)) {
+        return false;
+    }
+    
+    // Load maze
+    if (!maze_.load(state.maze_file)) {
+        std::cerr << "Error: Cannot load maze file from save: " << state.maze_file << std::endl;
+        return false;
+    }
+    current_maze_file_ = state.maze_file;
+    
+    // Restore player state
+    // We need to recreate the player with the saved history
+    int start_x, start_y;
+    maze_.get_start_pos(start_x, start_y);
+    player_ = Player(start_x, start_y);
+    
+    // Replay all moves to restore state
+    for (size_t i = 1; i < state.move_history.size() && i - 1 < state.command_history.size(); i++) {
+        player_.move_to(state.move_history[i].first, 
+                       state.move_history[i].second, 
+                       state.command_history[i - 1]);
+    }
+    
+    return true;
 }
