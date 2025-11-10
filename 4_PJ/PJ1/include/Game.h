@@ -3,6 +3,7 @@
 #include "Maze.h"
 #include "Player.h"
 #include "SaveManager.h"
+#include "MazeGenerator.h"
 #include <string>
 
 class Game {
@@ -33,6 +34,9 @@ private:
     
     // Handle load command with slot number
     void handle_load_command(int slot);
+    
+    // Generate a new maze
+    void generate_maze_menu();
 
 public:
     Game();
@@ -42,4 +46,7 @@ public:
     
     // Main game loop
     void run();
+    
+    // Show main menu and handle user choice
+    static void show_main_menu();
 };

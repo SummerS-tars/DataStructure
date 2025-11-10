@@ -444,3 +444,157 @@ void Game::handle_load_command(int slot) {
     std::cout << "Press Enter to continue...";
     std::cin.get();
 }
+
+void Game::generate_maze_menu() {
+    clear_screen();
+    std::cout << "\n========================================\n";
+    std::cout << "       Maze Generator\n";
+    std::cout << "========================================\n";
+    std::cout << "  Create a new random maze\n";
+    std::cout << "========================================\n\n";
+    
+    int width, height;
+    std::string filename;
+    
+    std::cout << "Enter maze width (odd number, e.g., 15, 21, 31): ";
+    std::cin >> width;
+    
+    std::cout << "Enter maze height (odd number, e.g., 15, 21, 31): ";
+    std::cin >> height;
+    
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    
+    std::cout << "Enter filename to save (e.g., data/MyMaze.txt): ";
+    std::getline(std::cin, filename);
+    
+    // Validate input
+    if (width < 5 || height < 5) {
+        std::cout << "\n✗ Error: Maze size too small! Minimum size is 5x5.\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    if (width > 101 || height > 101) {
+        std::cout << "\n✗ Error: Maze size too large! Maximum size is 101x101.\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    // Create generator and generate maze
+    std::cout << "\n----------------------------------------\n";
+    MazeGenerator generator(width, height);
+    generator.generate();
+    
+    // Save to file
+    if (generator.save_to_file(filename)) {
+        std::cout << "\n========================================\n";
+        std::cout << "  ✓ Maze Generated Successfully!\n";
+        std::cout << "========================================\n";
+        std::cout << "  Size:     " << width << "x" << height << "\n";
+        std::cout << "  File:     " << filename << "\n";
+        std::cout << "========================================\n";
+        std::cout << "\nYou can now play this maze by loading it\n";
+        std::cout << "from the main menu.\n";
+    } else {
+        std::cout << "\n✗ Failed to save maze to file.\n";
+    }
+    
+    std::cout << "\nPress Enter to continue...";
+    std::cin.get();
+}
+
+void Game::show_main_menu() {
+    while (true) {
+        std::cout << "\n========================================\n";
+        std::cout << "    Maze Path Analysis System\n";
+        std::cout << "========================================\n";
+        std::cout << "  1. Start New Game\n";
+        std::cout << "  2. Load Saved Game\n";
+        std::cout << "  3. Generate New Maze\n";
+        std::cout << "  4. View Help\n";
+        std::cout << "  5. Exit\n";
+        std::cout << "========================================\n";
+        std::cout << "  Select option (1-5): ";
+        
+        int choice;
+        std::cin >> choice;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        
+        if (choice == 1) {
+            // Start new game
+            std::cout << "\nEnter maze file path (e.g., data/Maze1.txt): ";
+            std::string maze_file;
+            std::getline(std::cin, maze_file);
+            
+            Game game;
+            if (game.init(maze_file)) {
+                game.run();
+            } else {
+                std::cout << "Failed to load maze. Press Enter to continue...";
+                std::cin.get();
+            }
+        } else if (choice == 2) {
+            // Load saved game
+            std::cout << "\nEnter maze file for the saved game (e.g., data/Maze1.txt): ";
+            std::string maze_file;
+            std::getline(std::cin, maze_file);
+            
+            Game game;
+            if (game.init(maze_file)) {
+                // Show saves and let user choose
+                game.save_manager_.list_saves();
+                std::cout << "\nEnter slot number to load (1-5, or 0 to cancel): ";
+                int slot;
+                std::cin >> slot;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                
+                if (slot > 0) {
+                    game.handle_load_command(slot);
+                    game.run();
+                }
+            } else {
+                std::cout << "Failed to load maze. Press Enter to continue...";
+                std::cin.get();
+            }
+        } else if (choice == 3) {
+            // Generate new maze
+            Game game;
+            game.generate_maze_menu();
+        } else if (choice == 4) {
+            // Show help
+            std::cout << "\n========================================\n";
+            std::cout << "            Help\n";
+            std::cout << "========================================\n";
+            std::cout << "【Movement Commands】\n";
+            std::cout << "  W - Move up\n";
+            std::cout << "  A - Move left\n";
+            std::cout << "  S - Move down\n";
+            std::cout << "  D - Move right\n\n";
+            std::cout << "【Function Commands】\n";
+            std::cout << "  P - Print complete path\n";
+            std::cout << "  U - Undo last move\n";
+            std::cout << "  R - Replay all moves\n";
+            std::cout << "  SAVE [1-5] - Save game\n";
+            std::cout << "  LOAD [1-5] - Load game\n";
+            std::cout << "  SAVES - List all saves\n";
+            std::cout << "  HELP - Show this help\n";
+            std::cout << "  QUIT - Exit game\n\n";
+            std::cout << "【Game Rules】\n";
+            std::cout << "  * Move from Start (S) to End (E)\n";
+            std::cout << "  * '#' = Wall (cannot pass)\n";
+            std::cout << "  * ' ' = Passage (can pass)\n";
+            std::cout << "========================================\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+        } else if (choice == 5) {
+            std::cout << "\nThank you for playing!\n";
+            break;
+        } else {
+            std::cout << "\nInvalid choice. Please select 1-5.\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+        }
+    }
+}
