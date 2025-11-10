@@ -6,7 +6,7 @@ SRC_DIR := src
 OBJ_DIR := obj
 BIN := maze_game
 
-SRCS := $(wildcard $(SRC_DIR)/*.cpp)
+SRCS := $(filter-out $(SRC_DIR)/test_%.cpp, $(wildcard $(SRC_DIR)/*.cpp))
 OBJS := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 all: $(BIN)
