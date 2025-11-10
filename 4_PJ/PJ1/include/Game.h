@@ -37,6 +37,12 @@ private:
     
     // Generate a new maze
     void generate_maze_menu();
+    
+    // Helper functions for menu
+    static std::vector<std::string> scan_maze_files();
+    static std::vector<int> scan_save_slots();
+    static std::string select_maze_file();
+    static int select_save_slot();
 
 public:
     Game();

@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <limits>
 #include <string>
+#include <vector>
+#include <algorithm>
+#include <dirent.h>
+#include <sys/stat.h>
 
 Game::Game() : player_(0, 0), is_running_(false), current_maze_file_("") {}
 
@@ -507,11 +511,25 @@ void Game::generate_maze_menu() {
 
 void Game::show_main_menu() {
     while (true) {
+        // Scan for available files
+        std::vector<std::string> mazes = scan_maze_files();
+        std::vector<int> saves = scan_save_slots();
+        
         std::cout << "\n========================================\n";
         std::cout << "    Maze Path Analysis System\n";
         std::cout << "========================================\n";
-        std::cout << "  1. Start New Game\n";
-        std::cout << "  2. Load Saved Game\n";
+        std::cout << "  1. Start New Game";
+        if (!mazes.empty()) {
+            std::cout << " (" << mazes.size() << " maze" << (mazes.size() > 1 ? "s" : "") << " available)";
+        }
+        std::cout << "\n";
+        
+        std::cout << "  2. Load Saved Game";
+        if (!saves.empty()) {
+            std::cout << " (" << saves.size() << " save" << (saves.size() > 1 ? "s" : "") << " found)";
+        }
+        std::cout << "\n";
+        
         std::cout << "  3. Generate New Maze\n";
         std::cout << "  4. View Help\n";
         std::cout << "  5. Exit\n";
@@ -523,40 +541,36 @@ void Game::show_main_menu() {
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         
         if (choice == 1) {
-            // Start new game
-            std::cout << "\nEnter maze file path (e.g., data/Maze1.txt): ";
-            std::string maze_file;
-            std::getline(std::cin, maze_file);
+            // Start new game - use interactive selection
+            std::string maze_file = select_maze_file();
             
-            Game game;
-            if (game.init(maze_file)) {
-                game.run();
-            } else {
-                std::cout << "Failed to load maze. Press Enter to continue...";
-                std::cin.get();
+            if (!maze_file.empty()) {
+                Game game;
+                if (game.init(maze_file)) {
+                    game.run();
+                } else {
+                    std::cout << "Failed to load maze. Press Enter to continue...";
+                    std::cin.get();
+                }
             }
         } else if (choice == 2) {
-            // Load saved game
-            std::cout << "\nEnter maze file for the saved game (e.g., data/Maze1.txt): ";
-            std::string maze_file;
-            std::getline(std::cin, maze_file);
+            // Load saved game - use interactive selection
+            int slot = select_save_slot();
             
-            Game game;
-            if (game.init(maze_file)) {
-                // Show saves and let user choose
-                game.save_manager_.list_saves();
-                std::cout << "\nEnter slot number to load (1-5, or 0 to cancel): ";
-                int slot;
-                std::cin >> slot;
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                
-                if (slot > 0) {
-                    game.handle_load_command(slot);
-                    game.run();
+            if (slot > 0) {
+                // Get maze file from save
+                SaveManager manager;
+                GameState state;
+                if (manager.get_save_info(slot, state)) {
+                    Game game;
+                    if (game.init(state.maze_file)) {
+                        game.handle_load_command(slot);
+                        game.run();
+                    } else {
+                        std::cout << "Failed to load maze from save. Press Enter to continue...";
+                        std::cin.get();
+                    }
                 }
-            } else {
-                std::cout << "Failed to load maze. Press Enter to continue...";
-                std::cin.get();
             }
         } else if (choice == 3) {
             // Generate new maze
@@ -597,4 +611,115 @@ void Game::show_main_menu() {
             std::cin.get();
         }
     }
+}
+
+// Scan data directory for maze files
+std::vector<std::string> Game::scan_maze_files() {
+    std::vector<std::string> mazes;
+    DIR* dir = opendir("data");
+    
+    if (dir == nullptr) {
+        return mazes;
+    }
+    
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string filename = entry->d_name;
+        // Check if it's a .txt file
+        if (filename.length() > 4 && filename.substr(filename.length() - 4) == ".txt") {
+            mazes.push_back(filename);
+        }
+    }
+    closedir(dir);
+    
+    std::sort(mazes.begin(), mazes.end());
+    return mazes;
+}
+
+// Scan saves directory for save files
+std::vector<int> Game::scan_save_slots() {
+    std::vector<int> slots;
+    SaveManager manager;
+    
+    for (int i = 1; i <= 5; i++) {
+        if (manager.save_exists(i)) {
+            slots.push_back(i);
+        }
+    }
+    
+    return slots;
+}
+
+// Interactive maze file selection
+std::string Game::select_maze_file() {
+    std::vector<std::string> mazes = scan_maze_files();
+    
+    if (mazes.empty()) {
+        std::cout << "\n✗ No maze files found in data/ directory!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return "";
+    }
+    
+    std::cout << "\n========================================\n";
+    std::cout << "      Select a Maze File\n";
+    std::cout << "========================================\n";
+    
+    for (size_t i = 0; i < mazes.size(); i++) {
+        std::cout << "  [" << (i + 1) << "] " << mazes[i] << "\n";
+    }
+    std::cout << "  [0] Cancel\n";
+    std::cout << "========================================\n";
+    std::cout << "Enter your choice: ";
+    
+    int choice;
+    std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    
+    if (choice < 1 || choice > static_cast<int>(mazes.size())) {
+        return "";
+    }
+    
+    return "data/" + mazes[choice - 1];
+}
+
+// Interactive save slot selection
+int Game::select_save_slot() {
+    std::vector<int> slots = scan_save_slots();
+    
+    if (slots.empty()) {
+        std::cout << "\n✗ No save files found!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return 0;
+    }
+    
+    SaveManager manager;
+    std::cout << "\n========================================\n";
+    std::cout << "      Select a Save File\n";
+    std::cout << "========================================\n";
+    
+    for (int slot : slots) {
+        GameState state;
+        if (manager.get_save_info(slot, state)) {
+            std::cout << "  [" << slot << "] " << state.get_maze_name() 
+                     << " - Pos(" << state.player_x << "," << state.player_y 
+                     << ") - " << state.step_count << " steps"
+                     << " - " << state.get_timestamp_str().substr(5, 11) << "\n";
+        }
+    }
+    std::cout << "  [0] Cancel\n";
+    std::cout << "========================================\n";
+    std::cout << "Enter slot number: ";
+    
+    int choice;
+    std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    
+    // Validate choice
+    if (std::find(slots.begin(), slots.end(), choice) == slots.end()) {
+        return 0;
+    }
+    
+    return choice;
 }
