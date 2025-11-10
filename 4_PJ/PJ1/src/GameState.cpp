@@ -1,6 +1,8 @@
 #include "GameState.h"
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 bool GameState::save(const std::string& filename) const {
     std::ofstream file(filename, std::ios::binary);
@@ -8,6 +10,10 @@ bool GameState::save(const std::string& filename) const {
         std::cerr << "Error: Cannot create save file " << filename << std::endl;
         return false;
     }
+    
+    // Write metadata
+    file.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+    file.write(reinterpret_cast<const char*>(&step_count), sizeof(step_count));
     
     // Write player position
     file.write(reinterpret_cast<const char*>(&player_x), sizeof(player_x));
@@ -42,6 +48,10 @@ bool GameState::load(const std::string& filename) {
         return false;
     }
     
+    // Read metadata
+    file.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
+    file.read(reinterpret_cast<char*>(&step_count), sizeof(step_count));
+    
     // Read player position
     file.read(reinterpret_cast<char*>(&player_x), sizeof(player_x));
     file.read(reinterpret_cast<char*>(&player_y), sizeof(player_y));
@@ -71,4 +81,20 @@ bool GameState::load(const std::string& filename) {
     
     file.close();
     return true;
+}
+
+std::string GameState::get_timestamp_str() const {
+    char buffer[80];
+    struct tm* timeinfo = localtime(&timestamp);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    return std::string(buffer);
+}
+
+std::string GameState::get_maze_name() const {
+    // Extract filename from path
+    size_t last_slash = maze_file.find_last_of("/\\");
+    if (last_slash != std::string::npos) {
+        return maze_file.substr(last_slash + 1);
+    }
+    return maze_file;
 }

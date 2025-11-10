@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <limits>
 #include <string>
-#include <sstream>
 
 Game::Game() : player_(0, 0), is_running_(false), current_maze_file_("") {}
 
@@ -167,22 +166,40 @@ void Game::run() {
         }
         
         // Check for special multi-character commands
-        if (upper_input == "SAVE") {
-            if (save_game("saves/game.save")) {
-                std::cout << "✓ Game saved to saves/game.save\n";
-            } else {
-                std::cout << "✗ Failed to save game!\n";
+        if (upper_input.substr(0, 4) == "SAVE") {
+            // Parse slot number (default to 1)
+            int slot = 1;
+            if (upper_input.length() > 5 && isdigit(upper_input[5])) {
+                slot = upper_input[5] - '0';
             }
-            std::cout << "Press Enter to continue...";
-            std::cin.get();
+            handle_save_command(slot);
             continue;
-        } else if (upper_input == "LOAD") {
-            if (load_game("saves/game.save")) {
-                std::cout << "✓ Game loaded from saves/game.save\n";
-            } else {
-                std::cout << "✗ Failed to load game!\n";
+        } else if (upper_input.substr(0, 4) == "LOAD") {
+            // Parse slot number
+            int slot = 0;
+            if (upper_input.length() > 5 && isdigit(upper_input[5])) {
+                slot = upper_input[5] - '0';
             }
-            std::cout << "Press Enter to continue...";
+            
+            if (slot == 0) {
+                // Show list and prompt
+                save_manager_.list_saves();
+                std::cout << "\nEnter slot number to load (1-5, or 0 to cancel): ";
+                std::cin >> slot;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                if (slot == 0) {
+                    std::cout << "Load cancelled.\n";
+                    std::cout << "Press Enter to continue...";
+                    std::cin.get();
+                    continue;
+                }
+            }
+            
+            handle_load_command(slot);
+            continue;
+        } else if (upper_input == "SAVES") {
+            save_manager_.list_saves();
+            std::cout << "\nPress Enter to continue...";
             std::cin.get();
             continue;
         } else if (upper_input == "QUIT" || upper_input == "EXIT") {
@@ -194,8 +211,9 @@ void Game::run() {
             std::cout << "P - Print path\n";
             std::cout << "U - Undo last move\n";
             std::cout << "R - Replay all moves\n";
-            std::cout << "SAVE - Save game\n";
-            std::cout << "LOAD - Load saved game\n";
+            std::cout << "SAVE [1-5] - Save game to slot (default: 1)\n";
+            std::cout << "LOAD [1-5] - Load game from slot\n";
+            std::cout << "SAVES - List all save files\n";
             std::cout << "QUIT - Exit game\n";
             std::cout << "============\n";
             std::cout << "Press Enter to continue...";
@@ -327,41 +345,62 @@ void Game::replay_moves() {
     std::cin.get();
 }
 
-bool Game::save_game(const std::string& filename) {
-    GameState state;
-    
-    // Save player position
-    state.player_x = player_.x();
-    state.player_y = player_.y();
-    
-    // Save maze file
-    state.maze_file = current_maze_file_;
-    
-    // Save move history
-    state.move_history = player_.get_path();
-    
-    // Save command history
-    state.command_history = player_.get_commands();
-    
-    return state.save(filename);
-}
-
-bool Game::load_game(const std::string& filename) {
-    GameState state;
-    
-    if (!state.load(filename)) {
-        return false;
+void Game::handle_save_command(int slot) {
+    // Validate slot number
+    if (!save_manager_.is_valid_slot(slot)) {
+        std::cout << "Invalid slot! Use SAVE 1-5\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
     }
     
-    // Load maze
+    // Use SaveManager to save
+    if (save_manager_.save_game(slot, player_, current_maze_file_)) {
+        // Success message already printed by SaveManager
+    } else {
+        std::cout << "✗ Failed to save game!\n";
+    }
+    
+    std::cout << "Press Enter to continue...";
+    std::cin.get();
+}
+
+void Game::handle_load_command(int slot) {
+    // Validate slot number
+    if (!save_manager_.is_valid_slot(slot)) {
+        std::cout << "Invalid slot! Use LOAD 1-5\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    // Check if save exists
+    if (!save_manager_.save_exists(slot)) {
+        std::cout << "✗ Save slot " << slot << " is empty!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    // Load state using SaveManager
+    GameState state;
+    if (!save_manager_.load_game(slot, state)) {
+        std::cout << "✗ Failed to load game!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
+    // Restore game state
     if (!maze_.load(state.maze_file)) {
         std::cerr << "Error: Cannot load maze file from save: " << state.maze_file << std::endl;
-        return false;
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
     }
     current_maze_file_ = state.maze_file;
     
     // Restore player state
-    // We need to recreate the player with the saved history
     int start_x, start_y;
     maze_.get_start_pos(start_x, start_y);
     player_ = Player(start_x, start_y);
@@ -373,5 +412,8 @@ bool Game::load_game(const std::string& filename) {
                        state.command_history[i - 1]);
     }
     
-    return true;
+    std::cout << "✓ Game loaded successfully!\n";
+    std::cout << "  Restored to position (" << state.player_x << ", " << state.player_y << ") with " << state.step_count << " steps\n";
+    std::cout << "Press Enter to continue...";
+    std::cin.get();
 }

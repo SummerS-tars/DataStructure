@@ -2,12 +2,14 @@
 
 #include "Maze.h"
 #include "Player.h"
+#include "SaveManager.h"
 #include <string>
 
 class Game {
 private:
     Maze maze_;
     Player player_;
+    SaveManager save_manager_;
     bool is_running_;
     std::string current_maze_file_;
     
@@ -26,11 +28,11 @@ private:
     // Replay all moves with animation
     void replay_moves();
     
-    // Save game state
-    bool save_game(const std::string& filename);
+    // Handle save command with slot number
+    void handle_save_command(int slot);
     
-    // Load game state
-    bool load_game(const std::string& filename);
+    // Handle load command with slot number
+    void handle_load_command(int slot);
 
 public:
     Game();
