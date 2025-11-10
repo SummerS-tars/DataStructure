@@ -98,3 +98,28 @@ void Maze::display(int player_x, int player_y) const {
     }
     std::cout << "===================================\n";
 }
+
+void Maze::display_multiplayer(int p1_x, int p1_y, char p1_symbol,
+                                int p2_x, int p2_y, char p2_symbol) const {
+    std::cout << "===================================\n";
+    std::cout << "Multiplayer Maze (" << p1_symbol << "=P1, " << p2_symbol << "=P2)\n";
+    std::cout << "===================================\n";
+    
+    for (int y = 0; y < height_; y++) {
+        for (int x = 0; x < static_cast<int>(map_data_[y].length()); x++) {
+            // Check if either player is at this position
+            if (x == p1_x && y == p1_y && x == p2_x && y == p2_y) {
+                // Both players at same position
+                std::cout << 'X';  // Collision marker
+            } else if (x == p1_x && y == p1_y) {
+                std::cout << p1_symbol;  // Player 1
+            } else if (x == p2_x && y == p2_y) {
+                std::cout << p2_symbol;  // Player 2
+            } else {
+                std::cout << map_data_[y][x];
+            }
+        }
+        std::cout << '\n';
+    }
+    std::cout << "===================================\n";
+}

@@ -1,7 +1,8 @@
 #include "Player.h"
 #include <algorithm>
 
-Player::Player(int x, int y) : x_(x), y_(y) {
+Player::Player(int x, int y, int player_id, char symbol, const std::string& name) 
+    : x_(x), y_(y), player_id_(player_id), symbol_(symbol), name_(name) {
     // Push initial position to history stack
     move_history_.push({x, y});
 }

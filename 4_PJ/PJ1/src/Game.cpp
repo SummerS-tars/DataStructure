@@ -6,21 +6,33 @@
 #include <limits>
 #include <string>
 
-Game::Game() : player_(0, 0), is_running_(false), current_maze_file_("") {}
+Game::Game() : player_(0, 0, 1, '@', "Player 1"), 
+               player2_(0, 0, 2, '$', "Player 2"),
+               is_running_(false), 
+               multiplayer_mode_(false),
+               current_player_(1),
+               current_maze_file_("") {}
 
-bool Game::init(const std::string& maze_file) {
+bool Game::init(const std::string& maze_file, bool multiplayer) {
     // Load maze
     if (!maze_.load(maze_file)) {
         return false;
     }
     
-    // Store current maze file
+    // Store current maze file and mode
     current_maze_file_ = maze_file;
+    multiplayer_mode_ = multiplayer;
     
-    // Initialize player at start position
+    // Initialize player(s) at start position
     int start_x, start_y;
     maze_.get_start_pos(start_x, start_y);
-    player_ = Player(start_x, start_y);
+    
+    player_ = Player(start_x, start_y, 1, '@', "Player 1");
+    
+    if (multiplayer) {
+        player2_ = Player(start_x, start_y, 2, '$', "Player 2");
+        current_player_ = 1;  // Player 1 starts
+    }
     
     is_running_ = true;
     return true;
@@ -442,4 +454,163 @@ void Game::handle_load_command(int slot) {
     std::cout << "  Restored to position (" << state.player_x << ", " << state.player_y << ") with " << state.step_count << " steps\n";
     std::cout << "Press Enter to continue...";
     std::cin.get();
+}
+
+// Multiplayer-specific methods
+bool Game::process_command_multiplayer(char cmd, Player& player) {
+    int new_x = player.x();
+    int new_y = player.y();
+    
+    switch (toupper(cmd)) {
+        case 'W': new_y--; break;  // Up
+        case 'S': new_y++; break;  // Down
+        case 'A': new_x--; break;  // Left
+        case 'D': new_x++; break;  // Right
+        default:
+            std::cout << "Invalid command: " << cmd << std::endl;
+            return false;
+    }
+    
+    // Check collision
+    if (maze_.is_wall(new_x, new_y)) {
+        std::cout << player.get_name() << " hit a wall! Turn skipped.\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin.get();
+        return false;
+    }
+    
+    // Move player
+    player.move_to(new_x, new_y, cmd);
+    return true;
+}
+
+bool Game::check_win_multiplayer(const Player& player) const {
+    int end_x, end_y;
+    maze_.get_end_pos(end_x, end_y);
+    return player.x() == end_x && player.y() == end_y;
+}
+
+void Game::print_interface_multiplayer() const {
+    clear_screen();
+    
+    Player* current = (current_player_ == 1) ? &const_cast<Player&>(player_) : &const_cast<Player&>(player2_);
+    Player* other = (current_player_ == 1) ? &const_cast<Player&>(player2_) : &const_cast<Player&>(player_);
+    
+    std::cout << "===================================\n";
+    std::cout << "    Multiplayer Race Mode\n";
+    std::cout << "===================================\n";
+    std::cout << "Current Turn: " << current->get_name() << " (" << current->get_symbol() << ")\n";
+    std::cout << "-----------------------------------\n";
+    std::cout << player_.get_name() << " " << player_.get_symbol() << ": Position (" << player_.x() << "," << player_.y() << ")  Steps: " << (player_.move_count() - 1) << "\n";
+    std::cout << player2_.get_name() << " " << player2_.get_symbol() << ": Position (" << player2_.x() << "," << player2_.y() << ")  Steps: " << (player2_.move_count() - 1) << "\n";
+    std::cout << "===================================\n\n";
+    
+    // Display maze with both players
+    maze_.display_multiplayer(player_.x(), player_.y(), player_.get_symbol(),
+                             player2_.x(), player2_.y(), player2_.get_symbol());
+    
+    std::cout << "\n===================================\n";
+    std::cout << "Commands:\n";
+    std::cout << "  W/A/S/D - Move (Up/Left/Down/Right)\n";
+    std::cout << "  P - Print your path  |  HELP - Show help\n";
+    std::cout << "  QUIT - Exit game\n";
+    std::cout << "===================================\n";
+}
+
+void Game::run_multiplayer() {
+    std::cout << "\n========================================\n";
+    std::cout << "  Multiplayer Race Mode Started!\n";
+    std::cout << "========================================\n";
+    std::cout << player_.get_name() << " (" << player_.get_symbol() << ") vs " 
+              << player2_.get_name() << " (" << player2_.get_symbol() << ")\n";
+    std::cout << "First to reach the exit wins!\n";
+    std::cout << "========================================\n";
+    std::cout << "Press Enter to start...";
+    std::cin.get();
+    
+    while (is_running_) {
+        print_interface_multiplayer();
+        
+        Player& current_player_ref = (current_player_ == 1) ? player_ : player2_;
+        
+        std::cout << "\n" << current_player_ref.get_name() << "'s turn. Enter command(s): ";
+        
+        std::string input;
+        std::getline(std::cin, input);
+        
+        if (input.empty()) {
+            continue;
+        }
+        
+        // Convert to uppercase
+        std::string upper_input = input;
+        for (char& c : upper_input) {
+            c = toupper(c);
+        }
+        
+        // Check special commands
+        if (upper_input == "QUIT" || upper_input == "Q" || upper_input == "EXIT") {
+            is_running_ = false;
+            std::cout << "\nGame ended. Final scores:\n";
+            std::cout << player_.get_name() << ": " << (player_.move_count() - 1) << " steps\n";
+            std::cout << player2_.get_name() << ": " << (player2_.move_count() - 1) << " steps\n";
+            break;
+        } else if (upper_input == "P" || upper_input == "PRINT") {
+            // Print current player's path
+            std::cout << "\n" << current_player_ref.get_name() << "'s Path:\n";
+            auto path = current_player_ref.get_path();
+            for (size_t i = 0; i < path.size(); i++) {
+                std::cout << "Step " << i << ": (" << path[i].first << ", " << path[i].second << ")\n";
+            }
+            std::cout << "\nPress Enter to continue...";
+            std::cin.get();
+            continue;
+        } else if (upper_input == "HELP") {
+            std::cout << "\n=== Multiplayer Help ===\n";
+            std::cout << "W/A/S/D - Move your player\n";
+            std::cout << "P - Print your path\n";
+            std::cout << "QUIT - Exit game\n";
+            std::cout << "\nPress Enter to continue...";
+            std::cin.get();
+            continue;
+        }
+        
+        // Process movement commands
+        bool moved = false;
+        for (char cmd : input) {
+            if (cmd == 'W' || cmd == 'w' || cmd == 'A' || cmd == 'a' ||
+                cmd == 'S' || cmd == 's' || cmd == 'D' || cmd == 'd') {
+                if (process_command_multiplayer(cmd, current_player_ref)) {
+                    moved = true;
+                    // Check if current player won
+                    if (check_win_multiplayer(current_player_ref)) {
+                        print_interface_multiplayer();
+                        std::cout << "\n========================================\n";
+                        std::cout << "  🎉 " << current_player_ref.get_name() << " WINS! 🎉\n";
+                        std::cout << "========================================\n";
+                        std::cout << "\nFinal Results:\n";
+                        std::cout << "  Winner: " << current_player_ref.get_name() << " - " << (current_player_ref.move_count() - 1) << " steps\n";
+                        Player& other_player = (current_player_ == 1) ? player2_ : player_;
+                        std::cout << "  " << other_player.get_name() << " - " << (other_player.move_count() - 1) << " steps\n";
+                        std::cout << "========================================\n";
+                        std::cout << "\nPress Enter to return to menu...";
+                        std::cin.get();
+                        is_running_ = false;
+                        return;
+                    }
+                } else {
+                    // Hit wall, skip rest of commands for this turn
+                    break;
+                }
+            }
+        }
+        
+        // Switch to next player if move was successful
+        if (moved) {
+            current_player_ = (current_player_ == 1) ? 2 : 1;
+        }
+    }
+    
+    std::cout << "Thanks for playing!\n";
 }

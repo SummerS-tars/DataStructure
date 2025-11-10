@@ -276,9 +276,34 @@ void MenuManager::show_main_menu() {
             std::string maze_file = select_maze_file();
             
             if (!maze_file.empty()) {
+                // Ask for game mode
+                std::cout << "\n========================================\n";
+                std::cout << "      Select Game Mode\n";
+                std::cout << "========================================\n";
+                std::cout << "  1. Single Player\n";
+                std::cout << "  2. Multiplayer Race (2 Players)\n";
+                std::cout << "  0. Cancel\n";
+                std::cout << "========================================\n";
+                std::cout << "Your choice: ";
+                
+                int mode_choice;
+                if (!validate_int_input(mode_choice)) {
+                    continue;
+                }
+                
+                if (mode_choice == 0) {
+                    continue;
+                }
+                
                 Game game;
-                if (game.init(maze_file)) {
-                    game.run();
+                bool multiplayer = (mode_choice == 2);
+                
+                if (game.init(maze_file, multiplayer)) {
+                    if (multiplayer) {
+                        game.run_multiplayer();
+                    } else {
+                        game.run();
+                    }
                 } else {
                     std::cout << "Failed to load maze. Press Enter to continue...";
                     std::cin.get();
