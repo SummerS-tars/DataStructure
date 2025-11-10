@@ -463,8 +463,28 @@ void Game::generate_maze_menu() {
     std::cout << "Enter maze width (odd number, e.g., 15, 21, 31): ";
     std::cin >> width;
     
+    // Check for input failure
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "\n✗ Invalid input! Please enter a valid number.\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
+    
     std::cout << "Enter maze height (odd number, e.g., 15, 21, 31): ";
     std::cin >> height;
+    
+    // Check for input failure
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "\n✗ Invalid input! Please enter a valid number.\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return;
+    }
     
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
@@ -538,6 +558,17 @@ void Game::show_main_menu() {
         
         int choice;
         std::cin >> choice;
+        
+        // Check if input failed (e.g., user entered non-numeric input)
+        if (std::cin.fail()) {
+            std::cin.clear(); // Clear error flags
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Discard invalid input
+            std::cout << "\n✗ Invalid input! Please enter a number between 1 and 5.\n";
+            std::cout << "Press Enter to continue...";
+            std::cin.get();
+            continue;
+        }
+        
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         
         if (choice == 1) {
@@ -674,6 +705,17 @@ std::string Game::select_maze_file() {
     
     int choice;
     std::cin >> choice;
+    
+    // Check for input failure
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "✗ Invalid input!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return "";
+    }
+    
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
     if (choice < 1 || choice > static_cast<int>(mazes.size())) {
@@ -714,6 +756,17 @@ int Game::select_save_slot() {
     
     int choice;
     std::cin >> choice;
+    
+    // Check for input failure
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "✗ Invalid input!\n";
+        std::cout << "Press Enter to continue...";
+        std::cin.get();
+        return 0;
+    }
+    
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     
     // Validate choice
