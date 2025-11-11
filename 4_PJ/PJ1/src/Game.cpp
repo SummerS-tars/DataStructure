@@ -283,9 +283,9 @@ void Game::run() {
 }
 
 void Game::replay_moves() {
-    // IMPORTANT: Make a COPY of commands, not a reference!
+    // IMPORTANT: Make a COPY of replay commands (includes undo operations)
     // We need to copy before resetting the player
-    std::vector<char> commands = player_.get_commands();
+    std::vector<char> commands = player_.get_replay_commands();
     
     if (commands.empty()) {
         std::cout << "\nNo moves to replay yet!\n";
@@ -316,24 +316,37 @@ void Game::replay_moves() {
         // Display current state
         clear_screen();
         std::cout << "=== Replay Mode ===\n";
-        std::cout << "Command " << (i + 1) << "/" << commands.size() << ": " << cmd << "\n";
+        std::cout << "Command " << (i + 1) << "/" << commands.size() << ": ";
+        
+        if (toupper(cmd) == 'U') {
+            std::cout << "UNDO\n";
+        } else {
+            std::cout << cmd << "\n";
+        }
+        
         std::cout << "===================\n\n";
         
         maze_.display(player_.x(), player_.y());
         
-        // Execute move
-        int new_x = player_.x();
-        int new_y = player_.y();
-        
-        switch (toupper(cmd)) {
-            case 'W': new_y--; break;
-            case 'S': new_y++; break;
-            case 'A': new_x--; break;
-            case 'D': new_x++; break;
-        }
-        
-        if (!maze_.is_wall(new_x, new_y)) {
-            player_.move_to(new_x, new_y, cmd);
+        // Execute command
+        if (toupper(cmd) == 'U') {
+            // Execute undo
+            player_.undo();
+        } else {
+            // Execute move
+            int new_x = player_.x();
+            int new_y = player_.y();
+            
+            switch (toupper(cmd)) {
+                case 'W': new_y--; break;
+                case 'S': new_y++; break;
+                case 'A': new_x--; break;
+                case 'D': new_x++; break;
+            }
+            
+            if (!maze_.is_wall(new_x, new_y)) {
+                player_.move_to(new_x, new_y, cmd);
+            }
         }
         
         // Delay for animation effect
@@ -348,7 +361,7 @@ void Game::replay_moves() {
     clear_screen();
     std::cout << "=== Replay Complete! ===\n\n";
     maze_.display(player_.x(), player_.y());
-    std::cout << "\nTotal moves: " << commands.size() << "\n";
+    std::cout << "\nTotal commands: " << commands.size() << "\n";
     
     // Restore original player state
     player_ = temp_player;

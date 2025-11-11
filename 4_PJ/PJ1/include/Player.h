@@ -12,7 +12,8 @@ private:
     char symbol_;    // Display symbol ('@' for P1, '$' for P2)
     std::string name_;
     std::stack<std::pair<int, int>> move_history_;
-    std::vector<char> command_history_;
+    std::vector<char> command_history_;  // For path reconstruction (W/A/S/D only)
+    std::vector<char> replay_history_;   // For replay (includes 'U' for undo)
 
 public:
     Player(int x, int y, int player_id = 1, char symbol = '@', const std::string& name = "Player");
@@ -33,7 +34,10 @@ public:
     // Get move history for path printing
     std::vector<std::pair<int, int>> get_path() const;
     
-    // Get command history for replay
+    // Get command history for replay (includes undo operations)
+    const std::vector<char>& get_replay_commands() const { return replay_history_; }
+    
+    // Get movement command history (W/A/S/D only, for path reconstruction)
     const std::vector<char>& get_commands() const { return command_history_; }
     
     // Multiplayer support

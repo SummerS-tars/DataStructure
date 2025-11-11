@@ -12,6 +12,7 @@ void Player::move_to(int x, int y, char command) {
     y_ = y;
     move_history_.push({x, y});
     command_history_.push_back(command);
+    replay_history_.push_back(command);  // Also record in replay history
 }
 
 bool Player::undo() {
@@ -28,10 +29,13 @@ bool Player::undo() {
     x_ = prev_pos.first;
     y_ = prev_pos.second;
     
-    // Remove last command from history
+    // Remove last command from movement history
     if (!command_history_.empty()) {
         command_history_.pop_back();
     }
+    
+    // Record undo in replay history
+    replay_history_.push_back('U');
     
     return true;
 }
