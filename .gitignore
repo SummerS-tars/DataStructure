@@ -5,3 +5,7 @@
 **/.DS_Store
 
 **/*.out
+**/.cache/
+**/compile_commands.json
+
+**/obj/
