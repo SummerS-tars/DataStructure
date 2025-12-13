@@ -128,7 +128,7 @@ TreeNode *lowestCommonAncestor(TreeNode *root, int a, int b)
 }
 
 /**
- * 迭代版本（可选）- 不使用递归栈空间
+ * 迭代版本 - 不使用递归栈空间
  * 时间复杂度：O(h)
  * 空间复杂度：O(1)
  */
