@@ -48,6 +48,7 @@ test: debug
 test-bin: $(TARGET)
 	@mkdir -p $(BIN_DIR) $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase1.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase1
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase2.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase2
 
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
