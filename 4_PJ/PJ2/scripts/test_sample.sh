@@ -35,3 +35,10 @@ else
   echo "[FAIL] test_phase1 binary failed." >&2
   exit 1
 fi
+
+if bin/test_phase2; then
+  echo "[PASS] test_phase2 binary passed."
+else
+  echo "[FAIL] test_phase2 binary failed." >&2
+  exit 1
+fi
