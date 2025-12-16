@@ -50,6 +50,7 @@ test-bin: $(TARGET)
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase1.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase1
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase2.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase2
 	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase3.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase3
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase4.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase4
 
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
