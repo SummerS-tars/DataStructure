@@ -14,9 +14,11 @@ TARGET := $(BIN_DIR)/pj2
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
 MAIN_OBJ := $(BUILD_DIR)/main.o
-LIB_OBJS := $(filter-out $(MAIN_OBJ), $(OBJS))
+ENGINE_OBJ := $(BUILD_DIR)/engine_main.o
+# Core objects exclude both main and engine_main
+CORE_OBJS := $(filter-out $(MAIN_OBJ) $(ENGINE_OBJ), $(OBJS))
 
-.PHONY: all debug release run test clean help test-bin
+.PHONY: all debug release run test clean help test-bin engine
 
 all: debug
 
@@ -24,7 +26,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-$(TARGET): $(OBJS)
+$(TARGET): $(CORE_OBJS) $(MAIN_OBJ)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
 
@@ -47,10 +49,15 @@ test: debug
 
 test-bin: $(TARGET)
 	@mkdir -p $(BIN_DIR) $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase1.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase1
-	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase2.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase2
-	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase3.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase3
-	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase4.cpp $(LIB_OBJS) -o $(BIN_DIR)/test_phase4
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase1.cpp $(CORE_OBJS) -o $(BIN_DIR)/test_phase1
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase2.cpp $(CORE_OBJS) -o $(BIN_DIR)/test_phase2
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase3.cpp $(CORE_OBJS) -o $(BIN_DIR)/test_phase3
+	$(CXX) $(CXXFLAGS) $(DBGFLAGS) $(INCLUDES) tests/test_phase4.cpp $(CORE_OBJS) -o $(BIN_DIR)/test_phase4
+
+# Build engine CLI (non-interactive)
+engine: debug $(ENGINE_OBJ)
+	@mkdir -p $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(ENGINE_OBJ) $(CORE_OBJS) -o $(BIN_DIR)/engine
 
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
