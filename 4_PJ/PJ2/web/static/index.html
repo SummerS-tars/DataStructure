@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PJ2 Web Demo</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin: 20px; }
+      header { margin-bottom: 16px; }
+      h1 { font-size: 18px; margin: 0 0 8px; }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+      .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; flex: 1 1 320px; }
+      label { display: block; font-size: 12px; color: #555; }
+      input { padding: 6px 8px; width: 120px; }
+      button { padding: 6px 10px; }
+      pre { background: #f7f7f8; border: 1px solid #eee; border-radius: 8px; padding: 10px; overflow:auto; }
+      .ok { color: #0a7; }
+      .warn { color: #e67e22; }
+      .err { color: #d33; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>PJ2 Web Demo</h1>
+      <div>极薄 Web 包装：生成地图、最短路径、Top 路径、探索、Boss 移动。</div>
+    </header>
+
+    <div class="row">
+      <div class="card">
+        <h2>生成地图</h2>
+        <label>seed <input id="seed" type="number" value="123" /></label>
+        <label>room_num <input id="room_num" type="number" value="20" /></label>
+        <label>extra_edges <input id="extra_edges" type="number" value="20" /></label>
+        <button onclick="genMap()">生成</button>
+        <div id="gen_status" class="ok"></div>
+        <button onclick="loadMapText()">查看文本地图</button>
+        <pre id="map_text"></pre>
+      </div>
+
+      <div class="card">
+        <h2>最短路径</h2>
+        <label>map_path <input id="map_path_short" type="text" value="build/map.txt" /></label>
+        <label>start <input id="start" type="number" value="0" /></label>
+        <label>goal <input id="goal" type="number" value="5" /></label>
+        <button onclick="shortest()">查询</button>
+        <pre id="shortest_out"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Top 路径</h2>
+        <label>map_path <input id="map_path_top" type="text" value="build/map.txt" /></label>
+        <label>k <input id="k" type="number" value="3" /></label>
+        <label>initial_power <input id="initp" type="number" value="10" /></label>
+        <button onclick="topPaths()">查询</button>
+        <pre id="top_out"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>探索（按最短路径）</h2>
+        <label>map_path <input id="map_path_ex" type="text" value="build/map.txt" /></label>
+        <label>start <input id="start_ex" type="number" value="0" /></label>
+        <label>goal <input id="goal_ex" type="number" value="5" /></label>
+        <label>initial_power <input id="initp_ex" type="number" value="10" /></label>
+        <button onclick="exploreShortest()">探索</button>
+        <pre id="ex_out"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Boss 移动</h2>
+        <label>map_path <input id="map_path_boss" type="text" value="build/map.txt" /></label>
+        <button onclick="bossMove()">移动一次</button>
+        <pre id="boss_out"></pre>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
