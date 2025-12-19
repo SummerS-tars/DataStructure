@@ -40,7 +40,7 @@ static bool cmd_generate(int argc, char** argv) {
     GenConfig cfg; cfg.seed = seed; cfg.room_num = room_num; cfg.extra_edges = extra_edges;
     auto map = MapGenerator::generate(cfg);
     if (!map.save(out_path)) return save_stdout_error("ERR save failed");
-    std::cout << "OK " << out_path << std::endl;
+    std::cout << map.to_json() << std::endl;
     return true;
 }
 

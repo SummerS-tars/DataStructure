@@ -26,6 +26,7 @@ public:
 
     // 调试打印
     std::string to_string() const;
+    std::string to_json() const;
 
     // 元信息
     int room_count() const { return (int)rooms_.size(); }

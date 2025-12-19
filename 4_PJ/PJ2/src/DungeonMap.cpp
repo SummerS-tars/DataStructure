@@ -5,6 +5,23 @@
 #include <sstream>
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+
+// Helper to escape JSON strings (minimal)
+static std::string json_escape(const std::string& s) {
+    std::ostringstream os;
+    for (char c : s) {
+        switch (c) {
+            case '\\': os << "\\\\"; break;
+            case '"': os << "\\\""; break;
+            case '\n': os << "\\n"; break;
+            case '\r': os << "\\r"; break;
+            case '\t': os << "\\t"; break;
+            default: os << c; break;
+        }
+    }
+    return os.str();
+}
 
 void DungeonMap::add_room(const Room& room) {
     rooms_[room.id] = room;
@@ -88,6 +105,58 @@ std::string DungeonMap::to_string() const {
         os << "\n";
     }
     os << "BossRoom: " << boss_id_ << "\n";
+    return os.str();
+}
+
+static std::string room_type_to_str(RoomType t) {
+    switch (t) {
+        case RoomType::START: return "START";
+        case RoomType::NORMAL: return "NORMAL";
+        case RoomType::BOSS: return "BOSS";
+        case RoomType::TREASURE: return "TREASURE";
+    }
+    return "NORMAL";
+}
+
+std::string DungeonMap::to_json() const {
+    std::ostringstream os;
+    os << "{\n  \"rooms\": [\n";
+    auto ids = room_ids();
+    for (size_t i = 0; i < ids.size(); ++i) {
+        const Room& r = rooms_.at(ids[i]);
+        os << "    {\"id\": " << r.id
+           << ", \"type\": \"" << room_type_to_str(r.type) << "\""
+           << ", \"tier\": " << r.tier
+           << ", \"power\": " << r.monster_power
+           << ", \"label\": \"" << json_escape(r.label) << "\""
+           << ", \"items\": [";
+        for (size_t k = 0; k < r.chest_items.size(); ++k) {
+            const auto& it = r.chest_items[k];
+            os << "{";
+            os << "\"name\": \"" << json_escape(it.name) << "\"";
+            os << ", \"type\": " << item_type_to_int(it.type);
+            os << ", \"val\": " << it.value;
+            os << ", \"power\": " << it.power_bonus;
+            os << "}";
+            if (k + 1 < r.chest_items.size()) os << ",";
+        }
+        os << "]";
+        os << "}";
+        if (i + 1 < ids.size()) os << ",";
+        os << "\n";
+    }
+    os << "  ],\n  \"edges\": [\n";
+    bool first_edge = true;
+    for (const auto& kv : adj_) {
+        int u = kv.first;
+        for (int v : kv.second) if (u < v) {
+            if (!first_edge) os << ",\n"; else first_edge = false;
+            os << "    {\"source\": " << u << ", \"target\": " << v << "}";
+        }
+    }
+    os << "\n  ],\n  \"bossId\": " << boss_id_
+       << ",\n  \"connected\": " << (is_connected() ? "true" : "false")
+       << "\n}";
     return os.str();
 }
 
