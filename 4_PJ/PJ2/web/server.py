@@ -42,6 +42,11 @@ class GenReq(BaseModel):
     room_num: int
     extra_edges: int
 
+class GridReq(BaseModel):
+    width: int
+    height: int
+    seed: int
+
 class ShortestReq(BaseModel):
     map_path: str
     start: int
@@ -75,6 +80,12 @@ def run_engine(args: List[str]) -> str:
 def generate(req: GenReq):
     out_path = str(BUILD / "map.txt")
     out = run_engine(["generate", str(req.seed), str(req.room_num), str(req.extra_edges), out_path])
+    return {"map_path": out_path, "raw": out}
+
+@app.post("/generate_grid")
+def generate_grid(req: GridReq):
+    out_path = str(BUILD / "map_grid.txt")
+    out = run_engine(["generate_grid", str(req.width), str(req.height), str(req.seed), out_path])
     return {"map_path": out_path, "raw": out}
 
 @app.get("/map_text")
@@ -134,6 +145,41 @@ def explore(req: ExploreReq):
     progressed = parts.get("progressed", "")
     path = [int(x) for x in progressed.split(",") if x]
     return {"success": success, "power_end": power_end, "total_value": total_value, "progressed": path}
+
+class NeighReq(BaseModel):
+    map_path: str
+    room_id: int
+
+@app.post("/neighbors")
+def neighbors(req: NeighReq):
+    out = run_engine(["neighbors", req.map_path, str(req.room_id)])
+    parts = out.split()
+    if not parts or parts[0] != "NEIGH":
+        raise HTTPException(status_code=400, detail="bad engine output")
+    ids = [int(x) for x in parts[1:]]
+    return {"neighbors": ids}
+
+class StepReq(BaseModel):
+    map_path: str
+    player_pos: int
+    next_room: int
+    power: int
+    out_map_path: str | None = None
+
+@app.post("/step_move")
+def step_move(req: StepReq):
+    out_map = req.out_map_path or str(BUILD / "map_step.txt")
+    out = run_engine(["step_move", req.map_path, out_map, str(req.player_pos), str(req.next_room), str(req.power)])
+    # STATE pos=.. power_end=.. total_value=.. moved=.. over=.. map=..
+    parts = {kv.split("=")[0]: kv.split("=")[1] for kv in out.split() if "=" in kv}
+    return {
+        "pos": int(parts.get("pos", "-1")),
+        "power_end": int(parts.get("power_end", "0")),
+        "total_value": int(parts.get("total_value", "0")),
+        "moved": parts.get("moved", "0") == "1",
+        "over": parts.get("over", "0") == "1",
+        "map_path": parts.get("map", out_map),
+    }
 
 @app.post("/bossmove")
 def bossmove(req: BossReq):

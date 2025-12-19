@@ -38,6 +38,15 @@
       </div>
 
       <div class="card">
+        <h2>生成网格地图</h2>
+        <label>width <input id="g_width" type="number" value="5" /></label>
+        <label>height <input id="g_height" type="number" value="4" /></label>
+        <label>seed <input id="g_seed" type="number" value="123" /></label>
+        <button onclick="genGrid()">生成网格</button>
+        <div id="grid_status" class="ok"></div>
+      </div>
+
+      <div class="card">
         <h2>最短路径</h2>
         <label>map_path <input id="map_path_short" type="text" value="build/map.txt" /></label>
         <label>start <input id="start" type="number" value="0" /></label>
@@ -72,6 +81,27 @@
         <label>map_path <input id="map_path_boss" type="text" value="build/map.txt" /></label>
         <button onclick="bossMove()">移动一次</button>
         <pre id="boss_out"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h2>邻接房间查询</h2>
+        <label>map_path <input id="map_path_nbr" type="text" value="build/map_grid.txt" /></label>
+        <label>room_id <input id="room_nbr" type="number" value="0" /></label>
+        <button onclick="neighbors()">查询邻接</button>
+        <pre id="nbr_out"></pre>
+      </div>
+
+      <div class="card">
+        <h2>交互移动（含战斗与收集）</h2>
+        <label>map_path <input id="map_path_step" type="text" value="build/map_grid.txt" /></label>
+        <label>out_map_path <input id="out_map_step" type="text" value="build/map_step.txt" /></label>
+        <label>pos <input id="pos_step" type="number" value="0" /></label>
+        <label>next <input id="next_step" type="number" value="1" /></label>
+        <label>power <input id="power_step" type="number" value="10" /></label>
+        <button onclick="stepMove()">前往</button>
+        <pre id="step_out"></pre>
       </div>
     </div>
 

@@ -7,6 +7,15 @@ async function genMap() {
   document.getElementById('gen_status').textContent = `OK -> ${j.map_path}`;
 }
 
+async function genGrid() {
+  const width = +document.getElementById('g_width').value;
+  const height = +document.getElementById('g_height').value;
+  const seed = +document.getElementById('g_seed').value;
+  const r = await fetch('/generate_grid', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ width, height, seed }) });
+  const j = await r.json();
+  document.getElementById('grid_status').textContent = `OK -> ${j.map_path}`;
+}
+
 async function loadMapText() {
   const r = await fetch('/map_text');
   const j = await r.json();
@@ -47,4 +56,23 @@ async function bossMove() {
   const r = await fetch('/bossmove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ map_path }) });
   const j = await r.json();
   document.getElementById('boss_out').textContent = `boss=${j.boss_id} new_map=${j.map_path}`;
+}
+
+async function neighbors() {
+  const map_path = document.getElementById('map_path_nbr').value.trim();
+  const room_id = +document.getElementById('room_nbr').value;
+  const r = await fetch('/neighbors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ map_path, room_id }) });
+  const j = await r.json();
+  document.getElementById('nbr_out').textContent = `NEIGH: ${(j.neighbors||[]).join(', ')}`;
+}
+
+async function stepMove() {
+  const map_path = document.getElementById('map_path_step').value.trim();
+  const out_map_path = document.getElementById('out_map_step').value.trim();
+  const player_pos = +document.getElementById('pos_step').value;
+  const next_room = +document.getElementById('next_step').value;
+  const power = +document.getElementById('power_step').value;
+  const r = await fetch('/step_move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ map_path, out_map_path, player_pos, next_room, power }) });
+  const j = await r.json();
+  document.getElementById('step_out').textContent = `pos=${j.pos} power_end=${j.power_end} total_value=${j.total_value} moved=${j.moved} over=${j.over}\nmap=${j.map_path}`;
 }
