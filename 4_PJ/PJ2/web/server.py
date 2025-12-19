@@ -2,8 +2,10 @@
 import tempfile
 import subprocess
 import json
+import random
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Dict, Any
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse
@@ -15,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENGINE = ROOT / "bin" / "engine"
 BUILD = ROOT / "build"
 BUILD.mkdir(parents=True, exist_ok=True)
+STATE_PATH = BUILD / "state.json"
 
 app = FastAPI(title="PJ2 Engine Wrapper")
 app.add_middleware(
@@ -69,6 +72,36 @@ class BossReq(BaseModel):
     map_path: str
 
 
+class MoveReq(BaseModel):
+    target_room_id: int
+    map_path: Optional[str] = None
+
+
+class BossTickReq(BaseModel):
+    map_path: Optional[str] = None
+
+
+# --- Simple state management ---
+def load_map_state() -> Dict[str, Any]:
+    if STATE_PATH.exists():
+        try:
+            return json.loads(STATE_PATH.read_text())
+        except Exception:
+            pass
+    # default state
+    return {
+        "map_path": str(BUILD / "map.txt"),
+        "player_pos": 0,
+        "power": 10,
+        "total_value": 0,
+        "logs": [],
+    }
+
+
+def save_map_state(state: Dict[str, Any]) -> None:
+    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+
+
 def run_engine(args: List[str]) -> str:
     try:
         cp = subprocess.run([str(ENGINE), *args], check=True, capture_output=True, text=True)
@@ -80,13 +113,31 @@ def run_engine(args: List[str]) -> str:
 def generate(req: GenReq):
     out_path = str(BUILD / "map.txt")
     out = run_engine(["generate", str(req.seed), str(req.room_num), str(req.extra_edges), out_path])
-    return {"map_path": out_path, "raw": out}
+    state = load_map_state()
+    state.update({
+        "map_path": out_path,
+        "player_pos": 0,
+        "power": 10,
+        "total_value": 0,
+        "logs": [],
+    })
+    save_map_state(state)
+    return {"map_path": out_path, "raw": out, "state": state}
 
 @app.post("/generate_grid")
 def generate_grid(req: GridReq):
     out_path = str(BUILD / "map_grid.txt")
     out = run_engine(["generate_grid", str(req.width), str(req.height), str(req.seed), out_path])
-    return {"map_path": out_path, "raw": out}
+    state = load_map_state()
+    state.update({
+        "map_path": out_path,
+        "player_pos": 0,
+        "power": 10,
+        "total_value": 0,
+        "logs": [],
+    })
+    save_map_state(state)
+    return {"map_path": out_path, "raw": out, "state": state}
 
 @app.get("/map_text")
 def map_text(path: str | None = None):
@@ -190,6 +241,95 @@ def bossmove(req: BossReq):
     if not parts or parts[0] != "BOSS":
         raise HTTPException(status_code=400, detail="bad engine output")
     return {"map_path": out_path, "boss_id": int(parts[1])}
+
+
+# --- Stateful endpoints ---
+
+def _append_log(state: Dict[str, Any], event: Dict[str, Any]):
+    logs = state.get("logs", [])
+    event["ts"] = datetime.utcnow().isoformat() + "Z"
+    logs.append(event)
+    state["logs"] = logs
+
+
+@app.post("/action/move")
+def action_move(req: MoveReq):
+    state = load_map_state()
+    map_path = req.map_path or state.get("map_path")
+    if not map_path:
+        raise HTTPException(status_code=400, detail="no map loaded")
+    player_pos = int(state.get("player_pos", 0))
+    power = int(state.get("power", 10))
+
+    # use engine step_move to validate adjacency + battle + loot + boss check
+    out_map = str(BUILD / "map_step.txt")
+    out = run_engine(["step_move", map_path, out_map, str(player_pos), str(req.target_room_id), str(power)])
+    parts = {kv.split("=")[0]: kv.split("=")[1] for kv in out.split() if "=" in kv}
+    moved = parts.get("moved", "0") == "1"
+    over = parts.get("over", "0") == "1"
+    new_pos = int(parts.get("pos", player_pos))
+    new_power = int(parts.get("power_end", power))
+    total_value = int(parts.get("total_value", state.get("total_value", 0)))
+    new_map_path = parts.get("map", out_map)
+
+    if moved:
+        state.update({
+            "player_pos": new_pos,
+            "power": new_power,
+            "total_value": total_value,
+            "map_path": new_map_path,
+        })
+        _append_log(state, {"action": "move", "from": player_pos, "to": new_pos, "power": new_power, "value": total_value, "over": over})
+        save_map_state(state)
+    status = "VICTORY" if over else ("OK" if moved else "MOVE_FAIL")
+    return {
+        "player_status": {
+            "pos": state.get("player_pos", new_pos),
+            "power": state.get("power", new_power),
+            "total_value": state.get("total_value", total_value),
+        },
+        "map_updates": {
+            "map_path": new_map_path,
+            "moved": moved,
+            "over": over,
+        },
+        "logs": state.get("logs", []),
+        "status": status,
+    }
+
+
+@app.post("/boss/tick")
+def boss_tick(req: BossTickReq):
+    state = load_map_state()
+    map_path = req.map_path or state.get("map_path")
+    if not map_path:
+        raise HTTPException(status_code=400, detail="no map loaded")
+    out_path = str(BUILD / "map_after_boss.txt")
+    out = run_engine(["bossmove", map_path, out_path])
+    parts = out.split()
+    if not parts or parts[0] != "BOSS":
+        raise HTTPException(status_code=400, detail="bad engine output")
+    boss_id = int(parts[1])
+
+    # recompute shortest path from current player pos to boss
+    player_pos = int(state.get("player_pos", 0))
+    sp_raw = run_engine(["shortest", out_path, str(player_pos), str(boss_id)])
+    sp_parts = sp_raw.split()
+    path = [int(x) for x in sp_parts[1:]] if sp_parts and sp_parts[0] == "PATH" else []
+
+    state["map_path"] = out_path
+    state["boss_id"] = boss_id
+    save_map_state(state)
+
+    _append_log(state, {"action": "boss_move", "boss_id": boss_id, "path_len": len(path)})
+
+    return {
+        "boss_id": boss_id,
+        "path": path,
+        "map_path": out_path,
+        "player_pos": player_pos,
+        "status": "OK",
+    }
 
 if __name__ == "__main__":
     import uvicorn
