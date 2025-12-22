@@ -1,3 +1,5 @@
 # build results
 bin/
 build/
+.github/
+__pycache__/
