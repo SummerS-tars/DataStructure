@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from app.core.game_engine import GameEngine
 from app.core.pathfinder import PathFinder
 from app.models import GameResponse, HealthResponse
+from app.utils.persistence import load_dungeon_state, load_user_save
 
 app = FastAPI(title="PJ2 Backend", version="0.3.0")
 
@@ -17,8 +18,8 @@ def read_root() -> HealthResponse:
 
 
 @app.post("/init", response_model=GameResponse)
-def init_game(difficulty: str = "easy") -> GameResponse:
-    """Initialize a new dungeon map based on difficulty factor."""
+def init_game(difficulty: str = "easy", resume: bool = True) -> GameResponse:
+    """Initialize a new dungeon map or resume previous run based on difficulty factor."""
 
     factor_map = {
         "easy": 1.0,
@@ -30,7 +31,7 @@ def init_game(difficulty: str = "easy") -> GameResponse:
         raise HTTPException(status_code=400, detail="Invalid difficulty. Use easy/normal/hard/abyss.")
 
     factor = factor_map[difficulty]
-    return engine.new_game(factor)
+    return engine.start_game(factor, resume=resume)
 
 
 @app.post("/move", response_model=GameResponse)
@@ -68,3 +69,27 @@ def get_best_loot_path():
     boss_id = engine._find_boss_room_id()
     paths = pathfinder.get_top_k_value_paths(rooms, engine.state.player.current_room_id, boss_id)
     return {"paths": paths}
+
+
+@app.get("/collection")
+def get_collection_tree():
+    """Expose persistent collection tree for lobby view."""
+    return {
+        "collection_tree": engine.loot_manager.to_dict(),
+    }
+
+
+@app.get("/save/dungeon")
+def get_dungeon_save():
+    data = load_dungeon_state()
+    if not data:
+        raise HTTPException(status_code=404, detail="Dungeon save not found")
+    return data
+
+
+@app.get("/save/user")
+def get_user_save():
+    data = load_user_save()
+    if not data:
+        raise HTTPException(status_code=404, detail="User save not found")
+    return data

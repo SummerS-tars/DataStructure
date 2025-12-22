@@ -33,6 +33,7 @@ class LootManager:
 
     def __init__(self):
         self.root = LootNode("Collection")
+        self._seen_ids: set[int] = set()
         self._type_to_node: Dict[ItemType, LootNode] = {}
         self._init_tree_structure()
 
@@ -83,11 +84,29 @@ class LootManager:
             self.add_item_to_collection(item)
 
     def add_item_to_collection(self, item: Item) -> None:
+        if item.id in self._seen_ids:
+            return
         target = self._type_to_node.get(item.type)
         if target is None:
-            # fallback: attach to root if type unmapped
             target = self.root
         target.add_item(item)
+        self._seen_ids.add(item.id)
 
     def to_dict(self) -> Dict[str, Any]:
         return self.root.to_dict()
+
+    def ingest_items(self, items: List[Item]) -> None:
+        for item in items:
+            self.add_item_to_collection(item)
+
+    def to_flat_list(self) -> List[Dict[str, Any]]:
+        """Flatten all stored items into a list of dicts for persistence."""
+        collected: List[Dict[str, Any]] = []
+
+        def collect(node: LootNode) -> None:
+            collected.extend(node.items)
+            for child in node.children:
+                collect(child)
+
+        collect(self.root)
+        return collected

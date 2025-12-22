@@ -1,8 +1,16 @@
 import random
 from typing import List, Optional, cast
 
+from app.core.loot_manager import LootManager
 from app.core.map_gen import MapGenerator
 from app.models import EquipmentSlots, GameResponse, Item, MapStructure, Monster, PlayerState, Room, RoomType
+from app.utils.persistence import (
+    clear_dungeon_state,
+    load_dungeon_state,
+    load_user_save,
+    save_dungeon_state,
+    save_user_save,
+)
 
 
 class GameEngine:
@@ -14,6 +22,11 @@ class GameEngine:
         self.state: Optional[GameResponse] = None
         self.boss_move_interval = 2
         self.turn_count = 0
+        self.difficulty_factor = 1.0
+        self.loot_manager = LootManager()
+        self._load_user_collection()
+        # ensure user save file exists with current tree
+        self._persist_user_collection()
 
     # --- Public API ---
     def new_game(self, difficulty_factor: float) -> GameResponse:
@@ -29,8 +42,22 @@ class GameEngine:
         )
         logs = [f"Game initialized (factor={difficulty_factor})."]
         self.turn_count = 0
+        self.difficulty_factor = difficulty_factor
         self.state = GameResponse(player=player, map_view=map_view, logs=logs, status="playing")
-        return self.state
+        # ensure user save exists even if cleaned between runs
+        self._persist_user_collection()
+        self._persist_state()
+        return self._require_state()
+
+    def start_game(self, difficulty_factor: float, resume: bool = True) -> GameResponse:
+        """Resume existing dungeon if allowed and valid; otherwise create new."""
+        if resume:
+            restored = self.resume_game()
+            if restored:
+                return restored
+        # no valid save
+        clear_dungeon_state()
+        return self.new_game(difficulty_factor)
 
     def is_valid_move(self, target_room_id: int) -> bool:
         if not self.state or self.state.status != "playing":
@@ -51,6 +78,7 @@ class GameEngine:
         if self.state and self.state.status == "playing" and self.turn_count % self.boss_move_interval == 0:
             self._move_boss()
 
+        self._persist_state()
         return self._require_state()
 
     def player_equip(self, item_id: int) -> GameResponse:
@@ -73,7 +101,24 @@ class GameEngine:
             eq.magic_stone = target
         self._recalc_power()
         state.logs.append(f"Equipped {target.name}, TotalPower={state.player.total_power}")
+        self._persist_state()
         return state
+
+    def resume_game(self) -> Optional[GameResponse]:
+        data = load_dungeon_state()
+        if not data:
+            return None
+        saved_state = data.get("state")
+        if not saved_state:
+            return None
+        restored = GameResponse.parse_obj(saved_state)
+        # skip finished runs
+        if restored.status in {"win", "dead"}:
+            return None
+        self.state = restored
+        self.turn_count = data.get("turn_count", 0)
+        self.difficulty_factor = data.get("difficulty_factor", 1.0)
+        return self._require_state()
 
     # --- Internals ---
     def _current_room(self) -> Room:
@@ -101,6 +146,9 @@ class GameEngine:
         if room.loot:
             player.inventory.append(room.loot)
             state.logs.append(f"Picked up {room.loot.name} (+{room.loot.power_bonus} power)")
+            # update global collection and persist user save
+            self.loot_manager.add_item_to_collection(room.loot)
+            self._persist_user_collection()
             room.loot = None
             self._recalc_power()
 
@@ -188,3 +236,34 @@ class GameEngine:
         if self.state is None:
             raise ValueError("Game not initialized")
         return cast(GameResponse, self.state)
+
+    # --- Persistence helpers ---
+    def _persist_state(self) -> None:
+        if not self.state:
+            return
+        payload = {
+            "state": self.state.dict(),
+            "turn_count": self.turn_count,
+            "difficulty_factor": self.difficulty_factor,
+        }
+        save_dungeon_state(payload)
+
+    def _load_user_collection(self) -> None:
+        data = load_user_save()
+        if not data:
+            return
+        items_raw = data.get("collection_items", [])
+        items: List[Item] = []
+        for raw in items_raw:
+            try:
+                items.append(Item.parse_obj(raw))
+            except Exception:
+                continue
+        self.loot_manager.ingest_items(items)
+
+    def _persist_user_collection(self) -> None:
+        payload = {
+            "collection_items": self.loot_manager.to_flat_list(),
+            "collection_tree": self.loot_manager.to_dict(),
+        }
+        save_user_save(payload)
