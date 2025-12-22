@@ -107,3 +107,28 @@ def test_boss_moves_every_two_turns(monkeypatch):
     assert res.map_view.rooms[2].type != RoomType.BOSS
     assert res.map_view.rooms[1].monster is not None and res.map_view.rooms[1].monster.is_boss
     assert res.map_view.rooms[1].type == RoomType.BOSS
+
+
+def test_boss_moves_onto_player_and_fights(monkeypatch):
+    engine = GameEngine(seed=6)
+    # player starts in a NORMAL room (not START so boss can move in)
+    rooms = {
+        0: Room(id=0, type=RoomType.NORMAL, neighbors=[1], visible=True, visited=True),
+        1: Room(id=1, type=RoomType.NORMAL, neighbors=[0, 2]),
+        2: Room(id=2, type=RoomType.BOSS, neighbors=[1], monster=Monster(power=20, is_boss=True, alive=True)),
+    }
+    edges = [[0, 1], [1, 2]]
+    build_state_for_engine(engine, rooms, edges)
+
+    # force boss move next turn
+    engine.turn_count = 1
+    # boss has only one candidate (room1)
+    monkeypatch.setattr(engine.rng, "choice", lambda seq: seq[0])
+
+    res = engine.process_turn(1)
+
+    # boss should have moved onto player in room1 and been fought immediately
+    assert res.player.current_room_id == 1
+    assert res.map_view.rooms[1].monster is not None
+    assert res.map_view.rooms[1].monster.alive is False
+    assert res.status == "win"
