@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 
 from app.core.game_engine import GameEngine
 from app.core.pathfinder import PathFinder
-from app.models import GameResponse, HealthResponse
+from app.models import GameResponse, HealthResponse, InitGameRequest
 from app.utils.persistence import load_dungeon_state, load_user_save
 
 app = FastAPI(title="PJ2 Backend", version="0.3.0")
@@ -18,8 +18,11 @@ def read_root() -> HealthResponse:
 
 
 @app.post("/init", response_model=GameResponse)
-def init_game(difficulty: str = "easy", resume: bool = True) -> GameResponse:
-    """Initialize a new dungeon map or resume previous run based on difficulty factor."""
+def init_game(req: InitGameRequest, resume: bool = True) -> GameResponse:
+    """Initialize a new dungeon map or resume previous run based on difficulty factor.
+
+    Now supports loadout_ids for extraction-style bring-in.
+    """
 
     factor_map = {
         "easy": 1.0,
@@ -27,11 +30,11 @@ def init_game(difficulty: str = "easy", resume: bool = True) -> GameResponse:
         "hard": 2.0,
         "abyss": 3.0,
     }
-    if difficulty not in factor_map:
+    if req.difficulty not in factor_map:
         raise HTTPException(status_code=400, detail="Invalid difficulty. Use easy/normal/hard/abyss.")
 
-    factor = factor_map[difficulty]
-    return engine.start_game(factor, resume=resume)
+    factor = factor_map[req.difficulty]
+    return engine.start_game(factor, resume=resume, loadout_ids=req.loadout_ids)
 
 
 @app.post("/move", response_model=GameResponse)

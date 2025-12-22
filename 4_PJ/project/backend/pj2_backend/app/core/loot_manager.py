@@ -110,3 +110,37 @@ class LootManager:
 
         collect(self.root)
         return collected
+
+    # --- Phase6: extraction support ---
+    def extract_items(self, item_ids: List[int]) -> List[Item]:
+        """Remove items by id from the collection tree and return them as Item objects.
+
+        This is a destructive cut (not copy) to support loadout/permadeath flow.
+        Unknown ids are ignored.
+        """
+
+        id_set = set(item_ids)
+        extracted: List[Item] = []
+
+        def walk(node: LootNode) -> None:
+            # remove matching items from this node
+            keep_items = []
+            for raw in node.items:
+                if "id" in raw and raw["id"] in id_set:
+                    try:
+                        extracted.append(Item.parse_obj(raw))
+                        self._seen_ids.discard(raw["id"])
+                        id_set.discard(raw["id"])
+                    except Exception:
+                        # if parse fails, just skip removal
+                        keep_items.append(raw)
+                else:
+                    keep_items.append(raw)
+            node.items = keep_items
+
+            # traverse children
+            for child in node.children:
+                walk(child)
+
+        walk(self.root)
+        return extracted

@@ -86,3 +86,8 @@ class GameResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str = "ok"
     message: str = "backend scaffold ready"
+
+
+class InitGameRequest(BaseModel):
+    difficulty: str = "easy"
+    loadout_ids: List[int] = Field(default_factory=list)

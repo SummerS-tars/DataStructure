@@ -29,7 +29,7 @@ class GameEngine:
         self._persist_user_collection()
 
     # --- Public API ---
-    def new_game(self, difficulty_factor: float) -> GameResponse:
+    def new_game(self, difficulty_factor: float, loadout_ids: Optional[List[int]] = None) -> GameResponse:
         map_view: MapStructure = self.map_generator.generate(difficulty_factor)
         player = PlayerState(
             current_room_id=0,
@@ -40,6 +40,13 @@ class GameEngine:
             equipment=EquipmentSlots(),
             inventory=[],
         )
+        # Phase6: bring-in loadout deducted from collection
+        loadout_ids = loadout_ids or []
+        if loadout_ids:
+            items = self.loot_manager.extract_items(loadout_ids)
+            player.inventory.extend(items)
+            # persist removal immediately to prevent duping
+            self._persist_user_collection()
         logs = [f"Game initialized (factor={difficulty_factor})."]
         self.turn_count = 0
         self.difficulty_factor = difficulty_factor
@@ -49,7 +56,7 @@ class GameEngine:
         self._persist_state()
         return self._require_state()
 
-    def start_game(self, difficulty_factor: float, resume: bool = True) -> GameResponse:
+    def start_game(self, difficulty_factor: float, resume: bool = True, loadout_ids: Optional[List[int]] = None) -> GameResponse:
         """Resume existing dungeon if allowed and valid; otherwise create new."""
         if resume:
             restored = self.resume_game()
@@ -57,7 +64,7 @@ class GameEngine:
                 return restored
         # no valid save
         clear_dungeon_state()
-        return self.new_game(difficulty_factor)
+        return self.new_game(difficulty_factor, loadout_ids=loadout_ids)
 
     def is_valid_move(self, target_room_id: int) -> bool:
         if not self.state or self.state.status != "playing":
@@ -181,6 +188,8 @@ class GameEngine:
         if room.type == RoomType.BOSS and (not room.monster or not room.monster.alive):
             state.status = "win"
             state.logs.append("Boss defeated! You win.")
+            # Phase6: return carried gear to collection
+            self._return_inventory_to_collection()
 
     def _resolve_combat(self, room: Room) -> None:
         state = self._require_state()
@@ -258,6 +267,19 @@ class GameEngine:
         if self.state is None:
             raise ValueError("Game not initialized")
         return cast(GameResponse, self.state)
+
+    def _return_inventory_to_collection(self) -> None:
+        """Ingest current inventory and equipped items back into collection (on win)."""
+        if not self.state:
+            return
+        items = list(self.state.player.inventory)
+        eq = self.state.player.equipment
+        for maybe in [eq.weapon, eq.helmet, eq.armor, eq.boots, eq.magic_stone]:
+            if maybe:
+                items.append(maybe)
+        if items:
+            self.loot_manager.ingest_items(items)
+            self._persist_user_collection()
 
     # --- Persistence helpers ---
     def _persist_state(self) -> None:

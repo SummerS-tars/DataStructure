@@ -75,7 +75,7 @@ def test_collection_endpoint_returns_tree():
 
     client = TestClient(app)
     # force create save via /init
-    client.post("/init", params={"difficulty": "easy", "resume": False})
+    client.post("/init", json={"difficulty": "easy", "loadout_ids": []}, params={"resume": False})
     res = client.get("/collection")
     assert res.status_code == 200
     payload = res.json()
@@ -88,7 +88,7 @@ def test_save_endpoints_after_init():
     from app.main import app
 
     client = TestClient(app)
-    client.post("/init", params={"difficulty": "easy", "resume": False})
+    client.post("/init", json={"difficulty": "easy", "loadout_ids": []}, params={"resume": False})
 
     res_d = client.get("/save/dungeon")
     assert res_d.status_code == 200
@@ -106,7 +106,7 @@ def test_use_consumable_restores_hp_and_removes_item():
     from app.main import app
 
     client = TestClient(app)
-    res = client.post("/init", params={"difficulty": "easy", "resume": False})
+    res = client.post("/init", json={"difficulty": "easy", "loadout_ids": []}, params={"resume": False})
     assert res.status_code == 200
     state = res.json()
 
@@ -129,3 +129,31 @@ def test_use_consumable_restores_hp_and_removes_item():
     inv_ids = [item["id"] for item in used_state["player"]["inventory"]]
     assert 777 not in inv_ids
     assert any("restored" in log for log in used_state["logs"])
+
+
+def test_init_with_loadout_deducts_from_collection_and_seeds_inventory():
+    from fastapi.testclient import TestClient
+    from app.main import app, engine
+    from app.models import Item, ItemType
+
+    # Seed collection with a known item (id 4242) and persist
+    custom = Item(id=4242, name="Loadout Blade", type=ItemType.WEAPON, power_bonus=9, value=90)
+    engine.loot_manager.add_item_to_collection(custom)
+    engine._persist_user_collection()  # type: ignore
+
+    client = TestClient(app)
+    res = client.post("/init", json={"difficulty": "easy", "loadout_ids": [4242]})
+    assert res.status_code == 200
+    payload = res.json()
+    inv_ids = [item["id"] for item in payload["player"]["inventory"]]
+    assert 4242 in inv_ids
+
+    # After deduction, user save should no longer contain the item in collection
+    user_save = engine._load_user_collection()  # type: ignore[attr-defined]
+    # _load_user_collection is private; instead, call persistence helper
+    from app.utils.persistence import load_user_save
+
+    saved = load_user_save()
+    assert saved is not None
+    flat = saved.get("collection_items", [])
+    assert all(it.get("id") != 4242 for it in flat)

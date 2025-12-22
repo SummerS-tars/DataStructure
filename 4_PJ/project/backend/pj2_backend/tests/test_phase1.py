@@ -73,7 +73,7 @@ def test_loot_tree_to_dict_contains_categories_and_items():
 
 def test_init_endpoint_returns_valid_game_response():
     client = TestClient(app)
-    res = client.post("/init", params={"difficulty": "normal"})
+    res = client.post("/init", json={"difficulty": "normal", "loadout_ids": []}, params={"resume": False})
     assert res.status_code == 200
     payload = res.json()
 
