@@ -102,6 +102,8 @@ def test_boss_moves_every_two_turns(monkeypatch):
 
     res = engine.process_turn(1)
 
-    # boss should have moved from 2 to 1 after player's move
+    # boss should have moved from 2 to 1 after player's move, and room type transferred
     assert res.map_view.rooms[2].monster is None
+    assert res.map_view.rooms[2].type != RoomType.BOSS
     assert res.map_view.rooms[1].monster is not None and res.map_view.rooms[1].monster.is_boss
+    assert res.map_view.rooms[1].type == RoomType.BOSS

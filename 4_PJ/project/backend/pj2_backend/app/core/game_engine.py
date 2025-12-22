@@ -167,6 +167,10 @@ class GameEngine:
         # swap boss into target
         target_room.monster = boss_room.monster
         boss_room.monster = None
+        # move boss room identity as well to avoid stale win conditions
+        if boss_room.type == RoomType.BOSS:
+            boss_room.type = RoomType.NORMAL
+            target_room.type = RoomType.BOSS
         state.logs.append(f"Boss moved to room {target} (hidden)")
 
     def _find_boss_room_id(self) -> int:
