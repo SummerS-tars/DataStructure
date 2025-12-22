@@ -1,0 +1,186 @@
+import random
+from typing import List, Optional, cast
+
+from app.core.map_gen import MapGenerator
+from app.models import EquipmentSlots, GameResponse, Item, MapStructure, Monster, PlayerState, Room, RoomType
+
+
+class GameEngine:
+    """Core game loop: manage state, moves, combat, loot, and boss movement."""
+
+    def __init__(self, map_generator: Optional[MapGenerator] = None, seed: int | None = None):
+        self.map_generator = map_generator or MapGenerator(seed=seed)
+        self.rng = random.Random(seed)
+        self.state: Optional[GameResponse] = None
+        self.boss_move_interval = 2
+        self.turn_count = 0
+
+    # --- Public API ---
+    def new_game(self, difficulty_factor: float) -> GameResponse:
+        map_view: MapStructure = self.map_generator.generate(difficulty_factor)
+        player = PlayerState(
+            current_room_id=0,
+            hp=100,
+            max_hp=100,
+            base_power=10,
+            total_power=10,
+            equipment=EquipmentSlots(),
+            inventory=[],
+        )
+        logs = [f"Game initialized (factor={difficulty_factor})."]
+        self.turn_count = 0
+        self.state = GameResponse(player=player, map_view=map_view, logs=logs, status="playing")
+        return self.state
+
+    def is_valid_move(self, target_room_id: int) -> bool:
+        if not self.state or self.state.status != "playing":
+            return False
+        current = self._current_room()
+        return target_room_id in current.neighbors
+
+    def process_turn(self, target_room_id: int) -> GameResponse:
+        state = self._require_state()
+        if state.status != "playing":
+            return state
+        if not self.is_valid_move(target_room_id):
+            raise ValueError("Invalid move: not a neighbor")
+
+        self.turn_count += 1
+        self._enter_room(target_room_id)
+
+        if self.state and self.state.status == "playing" and self.turn_count % self.boss_move_interval == 0:
+            self._move_boss()
+
+        return self._require_state()
+
+    def player_equip(self, item_id: int) -> GameResponse:
+        state = self._require_state()
+        target: Optional[Item] = next((i for i in state.player.inventory if i.id == item_id), None)
+        if not target:
+            raise ValueError("Item not found in inventory")
+        eq = state.player.equipment
+        from app.models import ItemType
+
+        if target.type == ItemType.WEAPON:
+            eq.weapon = target
+        elif target.type == ItemType.HELMET:
+            eq.helmet = target
+        elif target.type == ItemType.ARMOR:
+            eq.armor = target
+        elif target.type == ItemType.BOOTS:
+            eq.boots = target
+        elif target.type == ItemType.MAGIC_STONE:
+            eq.magic_stone = target
+        self._recalc_power()
+        state.logs.append(f"Equipped {target.name}, TotalPower={state.player.total_power}")
+        return state
+
+    # --- Internals ---
+    def _current_room(self) -> Room:
+        state = self._require_state()
+        return state.map_view.rooms[state.player.current_room_id]
+
+    def _enter_room(self, target_room_id: int) -> None:
+        state = self._require_state()
+        rooms = state.map_view.rooms
+        player = state.player
+        room = rooms[target_room_id]
+
+        # combat if monster alive
+        if room.monster and room.monster.alive:
+            self._resolve_combat(room)
+            if state.status == "dead":
+                return
+
+        # move player
+        player.current_room_id = target_room_id
+        room.visited = True
+        room.visible = True
+
+        # pickup loot
+        if room.loot:
+            player.inventory.append(room.loot)
+            state.logs.append(f"Picked up {room.loot.name} (+{room.loot.power_bonus} power)")
+            room.loot = None
+            self._recalc_power()
+
+        # reveal fog
+        self._reveal_visibility(target_room_id)
+
+        # win check
+        if room.type == RoomType.BOSS and (not room.monster or not room.monster.alive):
+            state.status = "win"
+            state.logs.append("Boss defeated! You win.")
+
+    def _resolve_combat(self, room: Room) -> None:
+        state = self._require_state()
+        player = state.player
+        monster: Monster = room.monster  # type: ignore
+        if player.total_power >= monster.power:
+            monster.alive = False
+            state.logs.append(f"Dominance! Defeated monster (power {monster.power}) without damage.")
+            return
+
+        diff = monster.power - player.total_power
+        cost = int(diff * self.rng.uniform(0.8, 1.2))
+        if cost >= player.hp:
+            player.hp = 0
+            state.status = "dead"
+            state.logs.append(
+                f"You attacked a too-strong foe (power {monster.power}). Took fatal damage ({cost}), you died."
+            )
+            return
+
+        player.hp -= cost
+        monster.alive = False
+        state.logs.append(f"Hard fight! Lost {cost} HP vs monster (power {monster.power}). HP={player.hp}")
+
+    def _reveal_visibility(self, room_id: int) -> None:
+        rooms = self._require_state().map_view.rooms
+        rooms[room_id].visible = True
+        rooms[room_id].visited = True
+        for n in rooms[room_id].neighbors:
+            rooms[n].visible = True
+
+    def _recalc_power(self) -> None:
+        state = self._require_state()
+        eq = state.player.equipment
+        total_bonus = sum(
+            item.power_bonus
+            for item in [eq.weapon, eq.helmet, eq.armor, eq.boots, eq.magic_stone]
+            if item is not None
+        )
+        state.player.total_power = state.player.base_power + total_bonus
+
+    def _move_boss(self) -> None:
+        state = self._require_state()
+        rooms = state.map_view.rooms
+        boss_id = self._find_boss_room_id()
+        boss_room = rooms[boss_id]
+        if not boss_room.monster or not boss_room.monster.alive:
+            return
+        candidates = [n for n in boss_room.neighbors if rooms[n].type != RoomType.START]
+        if not candidates:
+            return
+        target = self.rng.choice(candidates)
+        target_room = rooms[target]
+        # swap boss into target
+        target_room.monster = boss_room.monster
+        boss_room.monster = None
+        state.logs.append(f"Boss moved to room {target} (hidden)")
+
+    def _find_boss_room_id(self) -> int:
+        state = self._require_state()
+        for rid, room in state.map_view.rooms.items():
+            if room.monster and room.monster.is_boss:
+                return rid
+        # fallback: first boss type room
+        for rid, room in state.map_view.rooms.items():
+            if room.type == RoomType.BOSS:
+                return rid
+        return 0
+
+    def _require_state(self) -> GameResponse:
+        if self.state is None:
+            raise ValueError("Game not initialized")
+        return cast(GameResponse, self.state)

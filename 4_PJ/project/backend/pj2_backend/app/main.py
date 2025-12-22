@@ -1,17 +1,13 @@
 from fastapi import FastAPI, HTTPException
 
-from app.core.map_gen import MapGenerator
-from app.models import (
-    EquipmentSlots,
-    GameResponse,
-    HealthResponse,
-    MapStructure,
-    PlayerState,
-)
+from app.core.game_engine import GameEngine
+from app.core.pathfinder import PathFinder
+from app.models import GameResponse, HealthResponse
 
-app = FastAPI(title="PJ2 Backend", version="0.2.0")
+app = FastAPI(title="PJ2 Backend", version="0.3.0")
 
-map_generator = MapGenerator()
+engine = GameEngine()
+pathfinder = PathFinder()
 
 
 @app.get("/", response_model=HealthResponse)
@@ -34,18 +30,41 @@ def init_game(difficulty: str = "easy") -> GameResponse:
         raise HTTPException(status_code=400, detail="Invalid difficulty. Use easy/normal/hard/abyss.")
 
     factor = factor_map[difficulty]
-    map_view: MapStructure = map_generator.generate(factor)
+    return engine.new_game(factor)
 
-    player = PlayerState(
-        current_room_id=0,
-        hp=100,
-        max_hp=100,
-        base_power=10,
-        total_power=10,
-        equipment=EquipmentSlots(),
-        inventory=[],
-    )
 
-    logs = [f"Game initialized with difficulty '{difficulty}' (factor={factor})."]
+@app.post("/move", response_model=GameResponse)
+def move_player(target_room_id: int) -> GameResponse:
+    """Process a turn: move to neighbor, combat, loot, boss movement, fog update."""
+    try:
+        return engine.process_turn(target_room_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    return GameResponse(player=player, map_view=map_view, logs=logs, status="playing")
+
+@app.post("/equip", response_model=GameResponse)
+def equip_item(item_id: int) -> GameResponse:
+    try:
+        return engine.player_equip(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/guide/shortest")
+def get_shortest_path():
+    if not engine.state:
+        raise HTTPException(status_code=400, detail="Game not initialized")
+    rooms = engine.state.map_view.rooms
+    boss_id = engine._find_boss_room_id()
+    path = pathfinder.get_shortest_path(rooms, engine.state.player.current_room_id, boss_id)
+    return {"path": path}
+
+
+@app.get("/guide/best_loot")
+def get_best_loot_path():
+    if not engine.state:
+        raise HTTPException(status_code=400, detail="Game not initialized")
+    rooms = engine.state.map_view.rooms
+    boss_id = engine._find_boss_room_id()
+    paths = pathfinder.get_top_k_value_paths(rooms, engine.state.player.current_room_id, boss_id)
+    return {"paths": paths}
