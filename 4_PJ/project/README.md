@@ -15,6 +15,28 @@
 * **后端**：Python (FastAPI) 负责核心游戏逻辑、地图生成、路径规划及数据持久化。
 * **前端**：Vue.js + Vis-network 负责地图的可视化展示、交互操作及战术终端显示。
 
+### 1.1 运行方法
+
+后端：
+
+```bash
+# ...
+# 推荐先创建虚拟环境
+# ...
+cd ./backend/pj2_backend
+pip install -r requirements.txt
+python run.py
+```
+
+前端：
+
+```bash
+# 需要 Node.js 环境
+cd ./frontend/pj2_frontend
+npm install
+npm run dev
+```
+
 ---
 
 ## 2. 数据结构设计 (Data Structures)
