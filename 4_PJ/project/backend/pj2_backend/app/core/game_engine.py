@@ -252,6 +252,14 @@ class GameEngine:
             target_room.type = RoomType.BOSS
         state.logs.append(f"Boss moved to room {target} (hidden)")
 
+        # if boss moved onto the player, resolve immediate combat to avoid forced detour
+        if target == state.player.current_room_id and target_room.monster and target_room.monster.alive:
+            self._resolve_combat(target_room)
+            # win check if boss died on player tile
+            if target_room.type == RoomType.BOSS and (not target_room.monster or not target_room.monster.alive):
+                state.status = "win"
+                state.logs.append("Boss defeated! You win.")
+
     def _find_boss_room_id(self) -> int:
         state = self._require_state()
         for rid, room in state.map_view.rooms.items():
