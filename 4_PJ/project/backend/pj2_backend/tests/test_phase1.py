@@ -26,7 +26,9 @@ def test_map_generation_connectivity_and_boss_power():
     assert path_exists(rooms, 0, boss_id), "start to boss should have a path"
 
     assert rooms[boss_id].monster is not None
-    boss_power = rooms[boss_id].monster.power
+    boss_monster = rooms[boss_id].monster
+    assert boss_monster is not None
+    boss_power = boss_monster.power
     normal_powers = [r.monster.power for r in rooms.values() if r.type == RoomType.NORMAL and r.monster]
     assert boss_power > max(normal_powers), "boss must be the strongest"
 
