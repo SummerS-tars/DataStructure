@@ -104,6 +104,28 @@ class GameEngine:
         self._persist_state()
         return state
 
+    def use_consumable(self, item_id: int) -> GameResponse:
+        state = self._require_state()
+        target: Optional[Item] = next((i for i in state.player.inventory if i.id == item_id), None)
+        if not target:
+            raise ValueError("Item not found in inventory")
+        from app.models import ItemType
+
+        if target.type != ItemType.POTION:
+            raise ValueError("Item is not consumable")
+
+        # apply effect: restore 20 HP capped by max_hp
+        heal = 20
+        before = state.player.hp
+        state.player.hp = min(state.player.max_hp, state.player.hp + heal)
+        # remove the item from inventory (first occurrence)
+        state.player.inventory = [i for i in state.player.inventory if i.id != item_id] + []
+        state.logs.append(
+            f"Used {target.name}, restored {state.player.hp - before} HP (HP {before}->{state.player.hp})."
+        )
+        self._persist_state()
+        return state
+
     def resume_game(self) -> Optional[GameResponse]:
         data = load_dungeon_state()
         if not data:

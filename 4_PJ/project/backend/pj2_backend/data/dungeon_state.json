@@ -1,0 +1,474 @@
+{
+  "state": {
+    "player": {
+      "current_room_id": 0,
+      "hp": 100,
+      "max_hp": 100,
+      "base_power": 10,
+      "total_power": 10,
+      "equipment": {
+        "weapon": null,
+        "helmet": null,
+        "armor": null,
+        "boots": null,
+        "magic_stone": null
+      },
+      "inventory": []
+    },
+    "map_view": {
+      "rooms": {
+        "0": {
+          "id": 0,
+          "type": "start",
+          "neighbors": [
+            1
+          ],
+          "monster": null,
+          "loot": null,
+          "visited": true,
+          "visible": true
+        },
+        "1": {
+          "id": 1,
+          "type": "normal",
+          "neighbors": [
+            0,
+            2
+          ],
+          "monster": {
+            "power": 13,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": true
+        },
+        "2": {
+          "id": 2,
+          "type": "normal",
+          "neighbors": [
+            1,
+            3,
+            10
+          ],
+          "monster": {
+            "power": 12,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": {
+            "id": 1008,
+            "name": "Tier1 Weapon",
+            "type": "weapon",
+            "power_bonus": 3,
+            "value": 30,
+            "description": ""
+          },
+          "visited": false,
+          "visible": false
+        },
+        "3": {
+          "id": 3,
+          "type": "normal",
+          "neighbors": [
+            2,
+            4,
+            13,
+            7,
+            15
+          ],
+          "monster": {
+            "power": 16,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": {
+            "id": 1009,
+            "name": "Tier1 Weapon",
+            "type": "weapon",
+            "power_bonus": 1,
+            "value": 10,
+            "description": ""
+          },
+          "visited": false,
+          "visible": false
+        },
+        "4": {
+          "id": 4,
+          "type": "normal",
+          "neighbors": [
+            3,
+            5,
+            15,
+            16
+          ],
+          "monster": {
+            "power": 20,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "5": {
+          "id": 5,
+          "type": "normal",
+          "neighbors": [
+            4,
+            6,
+            16
+          ],
+          "monster": {
+            "power": 19,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "6": {
+          "id": 6,
+          "type": "normal",
+          "neighbors": [
+            5,
+            7,
+            19
+          ],
+          "monster": {
+            "power": 18,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": {
+            "id": 1010,
+            "name": "Tier1 Magic_Stone",
+            "type": "magic_stone",
+            "power_bonus": 2,
+            "value": 20,
+            "description": ""
+          },
+          "visited": false,
+          "visible": false
+        },
+        "7": {
+          "id": 7,
+          "type": "normal",
+          "neighbors": [
+            6,
+            8,
+            3
+          ],
+          "monster": {
+            "power": 17,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "8": {
+          "id": 8,
+          "type": "normal",
+          "neighbors": [
+            7,
+            9
+          ],
+          "monster": {
+            "power": 21,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "9": {
+          "id": 9,
+          "type": "boss",
+          "neighbors": [
+            8
+          ],
+          "monster": {
+            "power": 39,
+            "is_boss": true,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "10": {
+          "id": 10,
+          "type": "normal",
+          "neighbors": [
+            2,
+            11
+          ],
+          "monster": {
+            "power": 17,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "11": {
+          "id": 11,
+          "type": "normal",
+          "neighbors": [
+            10,
+            12
+          ],
+          "monster": {
+            "power": 15,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "12": {
+          "id": 12,
+          "type": "normal",
+          "neighbors": [
+            11
+          ],
+          "monster": {
+            "power": 22,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "13": {
+          "id": 13,
+          "type": "normal",
+          "neighbors": [
+            3,
+            14
+          ],
+          "monster": {
+            "power": 18,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "14": {
+          "id": 14,
+          "type": "normal",
+          "neighbors": [
+            13
+          ],
+          "monster": {
+            "power": 22,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": {
+            "id": 1011,
+            "name": "Tier1 Helmet",
+            "type": "helmet",
+            "power_bonus": 5,
+            "value": 50,
+            "description": ""
+          },
+          "visited": false,
+          "visible": false
+        },
+        "15": {
+          "id": 15,
+          "type": "normal",
+          "neighbors": [
+            4,
+            3
+          ],
+          "monster": {
+            "power": 19,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": {
+            "id": 1012,
+            "name": "Tier1 Weapon",
+            "type": "weapon",
+            "power_bonus": 1,
+            "value": 10,
+            "description": ""
+          },
+          "visited": false,
+          "visible": false
+        },
+        "16": {
+          "id": 16,
+          "type": "normal",
+          "neighbors": [
+            5,
+            17,
+            4
+          ],
+          "monster": {
+            "power": 22,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "17": {
+          "id": 17,
+          "type": "normal",
+          "neighbors": [
+            16,
+            18
+          ],
+          "monster": {
+            "power": 19,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "18": {
+          "id": 18,
+          "type": "normal",
+          "neighbors": [
+            17
+          ],
+          "monster": {
+            "power": 21,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        },
+        "19": {
+          "id": 19,
+          "type": "normal",
+          "neighbors": [
+            6
+          ],
+          "monster": {
+            "power": 24,
+            "is_boss": false,
+            "alive": true
+          },
+          "loot": null,
+          "visited": false,
+          "visible": false
+        }
+      },
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          2,
+          10
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          11,
+          12
+        ],
+        [
+          3,
+          13
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          4,
+          15
+        ],
+        [
+          5,
+          16
+        ],
+        [
+          16,
+          17
+        ],
+        [
+          17,
+          18
+        ],
+        [
+          6,
+          19
+        ],
+        [
+          4,
+          16
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          3,
+          15
+        ]
+      ]
+    },
+    "logs": [
+      "Game initialized (factor=1.0)."
+    ],
+    "status": "playing"
+  },
+  "turn_count": 0,
+  "difficulty_factor": 1.0
+}

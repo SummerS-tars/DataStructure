@@ -99,3 +99,33 @@ def test_save_endpoints_after_init():
     assert res_u.status_code == 200
     user = res_u.json()
     assert "collection_tree" in user or "collection_items" in user
+
+
+def test_use_consumable_restores_hp_and_removes_item():
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    client = TestClient(app)
+    res = client.post("/init", params={"difficulty": "easy", "resume": False})
+    assert res.status_code == 200
+    state = res.json()
+
+    # craft a potion and add to inventory
+    from app.models import Item
+
+    potion = Item(id=777, name="Test Potion", type=ItemType.POTION, power_bonus=0, value=10, description="Restore 20 HP")
+
+    # manually patch server state via engine (test-level)
+    from app.main import engine
+
+    if engine.state:
+        engine.state.player.inventory.append(potion)
+        engine.state.player.hp = 50
+
+    res_use = client.post("/use", params={"item_id": 777})
+    assert res_use.status_code == 200
+    used_state = res_use.json()
+    assert used_state["player"]["hp"] == 70
+    inv_ids = [item["id"] for item in used_state["player"]["inventory"]]
+    assert 777 not in inv_ids
+    assert any("restored" in log for log in used_state["logs"])

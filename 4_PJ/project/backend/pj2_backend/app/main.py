@@ -51,6 +51,14 @@ def equip_item(item_id: int) -> GameResponse:
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.post("/use", response_model=GameResponse)
+def use_consumable(item_id: int) -> GameResponse:
+    try:
+        return engine.use_consumable(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/guide/shortest")
 def get_shortest_path():
     if not engine.state:
