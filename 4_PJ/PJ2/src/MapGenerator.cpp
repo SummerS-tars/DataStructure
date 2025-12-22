@@ -60,8 +60,8 @@ DungeonMap MapGenerator::generate(const GenConfig& cfg) {
         map.add_room(r);
     }
 
-    // --- Step 2: pick backbone nodes (60% approx) ---
-    int backbone_len = std::max(2, cfg.room_num * 60 / 100); // ensure start+boss at least
+    // --- Step 2: pick backbone nodes (70% approx, enforce minimal depth) ---
+    int backbone_len = std::max(10, cfg.room_num * 70 / 100); // ensure较长主干
     if (backbone_len > cfg.room_num) backbone_len = cfg.room_num;
     std::vector<int> ids(cfg.room_num); std::iota(ids.begin(), ids.end(), 0);
     std::shuffle(ids.begin(), ids.end(), rng);
@@ -87,41 +87,28 @@ DungeonMap MapGenerator::generate(const GenConfig& cfg) {
         map.add_edge(parent, node);
     }
 
-    // --- Step 4: controlled extra edges (local loops) ---
-    int extra = std::max(0, cfg.extra_edges);
+    // --- Step 4: assign tiers via BFS from start (0) ---
+    assign_tiers(map, 0);
+
+    // --- Step 5: controlled extra edges (local loops, prevent shortcuts) ---
+    int extra = std::max(0, std::min(cfg.extra_edges, cfg.room_num / 2));
     std::uniform_int_distribution<int> ndist(0, cfg.room_num - 1);
     for (int e = 0; e < extra; ++e) {
         int u = ndist(rng), v = ndist(rng);
         if (u == v) { --e; continue; }
-        // We will only add if tiers are not too far after we compute tiers; for now tentatively add, then prune if needed
-        map.add_edge(u, v);
-    }
-
-    // --- Step 5: assign tiers via BFS from start (0) ---
-    assign_tiers(map, 0);
-
-    // Now prune extra edges that violate tier gap > 2
-    // Rebuild adjacency with constraint
-    std::vector<std::pair<int,int>> edges;
-    for (int u : map.room_ids()) {
-        for (int v : map.neighbors(u)) {
-            if (u < v) edges.emplace_back(u, v);
-        }
-    }
-    // Clear adj by recreating map edges respecting constraint
-    DungeonMap newmap;
-    for (int id : map.room_ids()) newmap.add_room(*map.get_room(id));
-    for (auto [u,v] : edges) {
         const Room* ru = map.get_room(u);
         const Room* rv = map.get_room(v);
-        if (!ru || !rv) continue;
-        if (ru->tier >=0 && rv->tier >=0 && std::abs(ru->tier - rv->tier) <= 2) {
-            newmap.add_edge(u, v);
+        if (!ru || !rv) { --e; continue; }
+        // 约束：层级差不超过1，且不直接连通起点/终点以免捷径
+        if (ru->tier >=0 && rv->tier >=0 && std::abs(ru->tier - rv->tier) <= 1) {
+            if ((u==0 || v==0) && (ru->tier < 2 || rv->tier < 2)) { continue; }
+            map.add_edge(u, v);
+        } else {
+            --e; // retry
         }
     }
-    map = std::move(newmap);
 
-    // Re-run tiers after pruning
+    // Re-run tiers after extra edges
     assign_tiers(map, 0);
 
     // --- Step 6: assign room types ---
